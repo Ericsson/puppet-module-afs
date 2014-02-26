@@ -1,0 +1,34 @@
+# This file is being maintained by Puppet.
+# DO NOT EDIT
+
+# OpenAFS Client Configuration
+#
+# This is the default EIS AFS client configuration set for newer versions (1.6.x)
+# Use at least 1.6.2 or newer! ( 1.6.0 is very buggy and 1.6.1 doesn't include the DNS ASFDB msg-size fix! )
+#
+# Since 1.6.x the afs-client has integrated auto-tuning.
+# So specifying more options for tuning should only be applied after monitoring the system.
+# candidates for tuning: -stat , -volumes
+
+#
+# Disk-cache options
+# Size of disk-cache is configured in file (RHEL + Solaris) /usr/vice/etc/cacheinfo or (SLE) /etc/openafs/cacheinfo
+# Size should not be bigger than 20% of machine's memory
+# Default value on normal systems 1GB, on Terminal-servers 3-4GB (usage should be monitored and then be adjusted)
+# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000"
+AFSD_ARGS="<%= @config_client_args_real %>"
+
+#
+# Memory-cache should only be used on diskless systems!
+# Don't use more than 1GB for memory-cache!
+# Configured memory for memcache is completely reserved for AFS, cannot be used by something else, even if the afs-client doesn't use it!
+# Example for 1GB memcache ( by specifying -blocks to afsd the configuration in cacheinfo will be ignored ):
+# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -memcache -blocks 1000000"
+
+#
+# This section is to enable a update_package feature in the startup-script via zypper (SLE) or yum (RHEL).
+# At the moment only available on Linux platform (SLE + RHEL).
+# It will be ignored on other platforms.
+# The client need a configured and activated repository.
+# Available options: false | true
+UPDATE="<%= @update_real %>"
