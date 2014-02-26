@@ -18,20 +18,20 @@ class afs (
       $cache_path_default         = '/usr/vice/cache'
       $config_cache_path_default  = '/usr/vice/etc/cacheinfo'
       $config_client_path_default = '/etc/sysconfig/openafs-client'
-      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-compat', 'openafs-docs', 'openafs-krb5', 'dkms', 'dkms-openafs' ]
+      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs' ]
     }
     'Suse': {
       $cache_path_default         = '/var/cache/openafs'
       $config_cache_path_default  = '/etc/openafs/cacheinfo'
       $config_client_path_default = '/etc/sysconfig/openafs-client'
-      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-compat', 'openafs-docs', 'openafs-krb5' ]
+      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit' ]
     }
-    'Solaris': {
-      $cache_path_default         = '/usr/vice/cache'
-      $config_cache_path_default  = '/usr/vice/etc/cacheinfo'
-      $config_client_path_default = '/usr/vice/etc/sysconfig/openafs-client'
-      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-compat', 'openafs-docs', 'openafs-krb5' ]
-    }
+#    'Solaris': {
+#      $cache_path_default         = '/usr/vice/cache'
+#      $config_cache_path_default  = '/usr/vice/etc/cacheinfo'
+#      $config_client_path_default = '/usr/vice/etc/sysconfig/openafs-client'
+#      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5' ]
+#    }
     default: {
       fail("afs supports osfamilies RedHat, Suse and Solaris. Detected osfamily is <${::osfamily}>.")
     }

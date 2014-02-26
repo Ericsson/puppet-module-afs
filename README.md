@@ -12,7 +12,7 @@ The module installs and configures OpenAFS.
 This module has been tested to work on the following systems.
 
  * RHEL 6
-
+ * Suse 11
 
 # Parameters #
 
