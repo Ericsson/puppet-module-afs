@@ -4,7 +4,7 @@
 # OpenAFS Client Configuration
 #
 # This is the default EIS AFS client configuration set for newer versions (1.6.x)
-# Use at least 1.6.2 or newer! ( 1.6.0 is very buggy and 1.6.1 doesn't include the DNS ASFDB msg-size fix! )
+# Use at least 1.6.2 or newer! ( 1.6.0 is very buggy and 1.6.1 doesn't include the DNS AFSDB msg-size fix! )
 #
 # Since 1.6.x the afs-client has integrated auto-tuning.
 # So specifying more options for tuning should only be applied after monitoring the system.
@@ -13,7 +13,7 @@
 #
 # Disk-cache options
 # Size of disk-cache is configured in file (RHEL + Solaris) /usr/vice/etc/cacheinfo or (SLE) /etc/openafs/cacheinfo
-# Size should not be bigger than 20% of machine's memory
+# Size should not be bigger than 20% of machine's memory, so that it can fit in filesystem-caching by OS.
 # Default value on normal systems 1GB, on Terminal-servers 3-4GB (usage should be monitored and then be adjusted)
 # AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000"
 AFSD_ARGS="<%= @config_client_args_real %>"
@@ -31,4 +31,5 @@ AFSD_ARGS="<%= @config_client_args_real %>"
 # It will be ignored on other platforms.
 # The client need a configured and activated repository.
 # Available options: false | true
+# UPDATE="false"
 UPDATE="<%= @update_real %>"
