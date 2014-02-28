@@ -8,6 +8,8 @@ class afs (
   $config_cache_path  = 'USE_DEFAULTS',
   $config_client_args = '-dynroot -afsdb -daemons 6 -volumes 1000',
   $config_client_path = 'USE_DEFAULTS',
+  $create_symlinks    = false,
+  $links              = undef,
   $packages           = 'USE_DEFAULTS',
   $update             = false,
 ) {
@@ -106,5 +108,21 @@ class afs (
   }
 
   # <Install & Config>
+
+
+  # <create symlinks>
+  if $create_symlinks == true {
+
+    $afs_create_link_defaults = {
+      'ensure' => 'link',
+      'owner'  => 'root',
+      'group'  => 'root',
+      'mode'   => '0755',
+    }
+
+    create_resources(file, $links, $afs_create_link_defaults)
+
+  }
+  # </create symlinks>
 
 }

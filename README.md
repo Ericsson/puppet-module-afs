@@ -58,6 +58,31 @@ Path to the openafs-client configuration file.
 - *Default*: 'USE_DEFAULTS', based on OS platform
 
 
+create_symlinks
+---------------
+Create symlinks for convenient access to AFS structure. Path and target are taken from hash in $links.
+
+- *Default*: false
+
+
+links
+-----
+Hash of path and target to create symlinks from if $create_links is true.
+
+- *Default*: undef
+
+Hiera example:
+<pre>
+afs::symlinks:
+  'app':
+    path:   '/app'
+    target: '/afs/some/path/app'
+  'env':
+    path:   '/env'
+    target: '/afs/some/path/env'
+</pre>
+
+
 packages
 --------
 Array of needed OpenAFS packages
