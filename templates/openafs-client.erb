@@ -14,7 +14,11 @@
 # Disk-cache options
 # Size of disk-cache is configured in file (RHEL + Solaris) /usr/vice/etc/cacheinfo or (SLE) /etc/openafs/cacheinfo
 # Size should not be bigger than 20% of machine's memory, so that it can fit in filesystem-caching by OS.
-# Default value on normal systems 1GB, on Terminal-servers 3-4GB (usage should be monitored and then be adjusted)
+# It is recommended for the disk cache to be on its own dedicated partition, to guarantee that the disk does not fill up.
+# On Solaris, ZFS in some scenarios does not perform well for cache behavior, so instead create a zvol with UFS for the cache partition.
+# If the cache-directory (RHEL + Solaris) /usr/vice/cache or (SLE) /var/cache/openafs is on a separate partition,
+# the cache-size should not be bigger than 95% of the partition-size. The client will not start if cache-size is bigger!
+# Default value is 1GB, size should be monitored and then be adjusted. On Terminal-servers 3-4GB is a good starting point.
 # AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000"
 AFSD_ARGS="<%= @config_client_args_real %>"
 
