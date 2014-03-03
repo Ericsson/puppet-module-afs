@@ -27,7 +27,7 @@ AFSD_ARGS="<%= @config_client_args_real %>"
 # Don't use more than 1GB for memory-cache!
 # Configured memory for memcache is completely reserved for AFS, cannot be used by something else, even if the afs-client doesn't use it!
 # Example for 1GB memcache ( by specifying -blocks to afsd the configuration in cacheinfo will be ignored ):
-# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -memcache -blocks 1000000"
+# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -memcache -blocks 1000000 -chunksize 17"
 
 #
 # This section is to enable a update_package feature in the startup-script via zypper (SLE) or yum (RHEL).
