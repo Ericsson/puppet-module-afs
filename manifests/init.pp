@@ -28,6 +28,13 @@ class afs (
       $config_client_path_default = '/etc/sysconfig/openafs-client'
       $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit' ]
     }
+# Placeholders only, untested
+#    'Debian': {
+#      $cache_path_default         = '/var/cache/openafs'
+#      $config_cache_path_default  = '/etc/openafs/cacheinfo'
+#      $config_client_path_default = '/etc/sysconfig/openafs-client'
+#      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5' ]
+#    }
 #    'Solaris': {
 #      $cache_path_default         = '/usr/vice/cache'
 #      $config_cache_path_default  = '/usr/vice/etc/cacheinfo'
