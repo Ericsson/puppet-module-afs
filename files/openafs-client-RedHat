@@ -1,0 +1,289 @@
+#!/bin/bash
+# Copyright (c) 2014 AFS-Core Ericsson
+#
+# openafs-client	Start/Stop the OpenAFS Client
+#
+# chkconfig: 2345 50 50
+# description: OpenAFS is a distributed filesystem.
+# Should-Start: dkms
+#
+# $Revision$
+
+DAEMON_BIN=/usr/vice/etc/afsd
+AFS_KERNEL_MODULE=openafs
+AFS=/afs
+OPENAFSDKMS=dkms-openafs
+SUIDCELLS=/usr/vice/etc/SuidCells
+
+[ -f /etc/init.d/functions ] && . /etc/init.d/functions
+[ -f /etc/sysconfig/openafs-client ] && . /etc/sysconfig/openafs-client
+
+# Set the minimum required options for afsd if no options set in /etc/sysconfig/openafs-client
+AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb"}
+UPDATE=${UPDATE:-"false"}
+DKMS=${DKMS:-"true"}
+
+
+
+suid() {
+  if [ -f $SUIDCELLS ]; then
+    for CELLS in `cat $SUIDCELLS | grep -v ^#`; do
+      echo "Setting $CELLS suid"
+      /usr/bin/fs setcell -cell $CELLS -suid
+    done
+  fi
+}
+
+killafs() {
+  SIGNAL=$1
+  PIDS=`lsof -Fp $AFS | sed -e 's/p//'`
+  if [ "x" != "x$PIDS" ]; then
+    kill -$SIGNAL $PIDS >/dev/null 2>&1
+    sleep 3
+  fi
+}
+
+dkms_check() {
+	rpm -q $OPENAFSDKMS >/dev/null 2>&1
+	RETVAL=$?
+	return $RETVAL
+}
+
+check_kernelmodule() {
+	# Only needed if dkms is not used
+	if dkms_check ; then
+		return 0
+	fi
+
+  /sbin/modprobe $AFS_KERNEL_MODULE > /dev/null 2>&1
+  RETVAL=$?
+  [ $RETVAL -eq 0 ] && return 0 # Kernel module loaded, continue...
+
+  echo
+  echo -n $"Failed to load kernel module, attempting rebuild.."
+  warning $"Failed to load kernel module, attempting rebuild.."
+  echo
+
+  KERNEL_VERSION=`uname -r`
+  KMOD_BUILDLOG=/tmp/openafs-kmod-build-`date +%Y%m%d-%H%M`.log
+
+  echo "Build log for OpenAFS module: `date`" > $KMOD_BUILDLOG
+
+  if [ -d /usr/src/openafs-kernel-$OPENAFS_VERSION/src ]; then
+    cd /usr/src/openafs-kernel-$OPENAFS_VERSION/src
+
+    make clean >> $KMOD_BUILDLOG 2>&1
+    ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >> $KMOD_BUILDLOG 2>&1
+    make -j4 >> $KMOD_BUILDLOG 2>&1
+
+    [ ! -d /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/ ] && mkdir /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
+
+    if [ -f src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko ]; then
+      cp src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
+      ln /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/openafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/libafs.ko
+    else
+      cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
+      ln /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/libafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/openafs.ko
+    fi
+
+    /sbin/depmod -a
+    /sbin/modprobe $AFS_KERNEL_MODULE >> $KMOD_BUILDLOG 2>&1
+    RETVAL=$?
+    [ $RETVAL -eq 0 ] && rm -f $KMOD_BUILDLOG && echo -n "Build succeded!" && success "Build succeded!" && echo && return 0
+
+    echo -n "Failed to build kernel module."
+    failed "Failed to build kernel module."
+    echo "See $KMOD_BUILDLOG for more details."
+  else
+    echo -n "OpenAFS Kernel source not installed."
+    failed "OpenAFS Kernel source not installed."
+    echo
+  fi
+}
+
+rm_wrong_module() {
+	# Only needed if dkms is not used
+	if dkms_check ; then
+		return 0
+	fi
+
+  kernel=`uname -r`
+  module="/lib/modules/$kernel/kernel/fs/openafs/libafs.ko"
+  if [ -f $module ] ; then
+    mod_version=`strings $module | grep OpenAFS | awk '{print $3}'`
+    pkg_version=`/usr/bin/fs --version | awk '{print $2}'`
+    if [ "$mod_version" != "$pkg_version" ] ; then
+      rm "/lib/modules/`uname -r`/kernel/fs/openafs/{openafs,libafs}.ko"
+      echo "Removed openafs.ko/libafs.ko, version mismatch"
+    fi
+  fi
+}
+
+package_update() {
+	if [ "$UPDATE" == "true" ] ; then
+		echo "Checking for OpenAFS updates.."
+		yum -q clean all
+		yum -q check-update openafs > /dev/null
+		RETVAL=$?
+		if [ "$RETVAL" -eq "100" ] ; then
+			echo "Upgrading OpenAFS"
+			if [ "$DKMS" == "true" ]; then
+			  yum -q -y install openafs openafs-client openafs-docs openafs-krb5 openafs-compat dkms-openafs dkms
+			else
+				yum -q -y install openafs openafs-client openafs-docs openafs-krb5 openafs-compat openafs-kernel-source
+			fi
+			echo "Done"
+		fi
+	fi
+}
+
+start() {
+	echo -n $"Starting openafs-client: "
+	if [ -e /var/lock/subsys/openafs-client ] ; then
+		echo -n $"cannot start openafs-client: already running"
+		failure $"cannot start openafs-client: already running"
+		echo
+		return 1
+	fi
+	# A configured yum repository is needed for the package-update
+	package_update
+	rm_wrong_module
+	if check_kernelmodule ; then
+		echo -n $"Updating CellServDB: "
+		cat /usr/vice/etc/CellServDB.local /usr/vice/etc/CellServDB.dist > \
+ 	 		/usr/vice/etc/CellServDB
+		chmod 644 /usr/vice/etc/CellServDB
+		echo
+
+		# Only needed if dkms is used
+		if dkms_check ; then
+			modprobe $AFS_KERNEL_MODULE
+			RETVAL=$?
+			if [ $RETVAL -ne 0 ] ; then
+				echo -n $"failed to load openafs kernel module."
+				failure $"failed to load openafs kernel module."
+				echo
+				return $RETVAL
+			fi
+		fi
+
+		$DAEMON_BIN $AFSD_ARGS
+		RETVAL=$?
+		echo
+		[ $RETVAL -eq 0 ] && touch /var/lock/subsys/openafs-client
+		[ $RETVAL -eq 0 ] && [ "$AFS_POST_INIT" ] && $AFS_POST_INIT
+		if [ $RETVAL -eq 0 ]; then
+			suid
+		fi
+		return $RETVAL
+	else
+		echo -n $"failed to load openafs kernel module."
+		failure $"failed to load openafs kernel module."
+		return 1
+	fi
+}
+
+stop() {
+	echo -n $"Stopping openafs-client: "
+	if [ ! -e /var/lock/subsys/openafs-client ] ; then
+		echo -n $"cannot stop openafs-client: not running"
+		failure $"cannot stop openafs-client: not running"
+		echo
+		return 1
+	fi
+	umount $AFS
+	RETVAL=$?
+	echo
+	if [ $RETVAL -eq 0 ] ; then
+		rmmod $AFS_KERNEL_MODULE
+		RETVAL=$?
+	fi
+	if [ $RETVAL -eq 0 ] ; then
+		rm -f /var/lock/subsys/openafs-client
+	fi
+	return $RETVAL
+}
+
+stop-force() {
+	echo -n $"Stopping openafs-client: "
+	if [ ! -e /var/lock/subsys/openafs-client ] ; then
+		echo -n $"cannot stop openafs-client: not running"
+		failure $"cannot stop openafs-client: not running"
+		echo
+		return 1
+	fi
+	if ps ax | grep -q '\[afsd\]'; then
+		echo
+		echo "Sending all processes using $AFS the TERM signal ..."
+		killafs TERM
+		echo "Sending all processes using $AFS the KILL signal ..."
+		killafs KILL
+  fi
+	umount $AFS
+	RETVAL=$?
+	echo
+	if [ $RETVAL -eq 0 ] ; then
+		rmmod $AFS_KERNEL_MODULE
+		RETVAL=$?
+	fi
+	if [ $RETVAL -eq 0 ] ; then
+		rm -f /var/lock/subsys/openafs-client
+	fi
+	return $RETVAL
+}
+
+rhstatus() {
+	status afsd
+	return $?
+}
+
+check() {
+	echo -n $"Checking openafs-client: "
+	if [ ! -e /var/lock/subsys/openafs-client ] ; then
+		echo -n $"cannot check openafs-client: not running"
+		failure $"cannot check openafs-client: not running"
+		echo
+		return 1
+	fi
+	if [ -f /afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh ]; then
+	  /afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh
+	else
+		echo -n $"Check-script not available: /afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh"
+		failure $"Check-script not available"
+		echo
+		return 1
+	fi
+}
+
+restart() {
+	stop || exit
+	start
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  stop-force)
+        stop-force
+        ;;
+  restart)
+        restart
+        ;;
+  status)
+        rhstatus
+	exit $?
+        ;;
+	check)
+				check
+				;;
+  condrestart)
+        [ -f /var/lock/subsys/openafs-client ] && restart || :
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|stop-force|status|check|restart|condrestart}"
+        exit 1
+esac
