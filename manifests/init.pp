@@ -9,6 +9,8 @@ class afs (
   $config_client_args = '-dynroot -afsdb -daemons 6 -volumes 1000',
   $config_client_path = 'USE_DEFAULTS',
   $create_symlinks    = false,
+  $init_script        = 'USE_DEFAULTS',
+  $init_template      = 'USE_DEFAULTS',
   $links              = undef,
   $packages           = 'USE_DEFAULTS',
   $update             = false,
@@ -20,12 +22,16 @@ class afs (
       $cache_path_default         = '/usr/vice/cache'
       $config_cache_path_default  = '/usr/vice/etc/cacheinfo'
       $config_client_path_default = '/etc/sysconfig/openafs-client'
+      $init_script_default        = '/etc/init.d/openafs-client'
+      $init_template_default      = 'openafs-client-RedHat'
       $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs' ]
     }
     'Suse': {
       $cache_path_default         = '/var/cache/openafs'
       $config_cache_path_default  = '/etc/openafs/cacheinfo'
       $config_client_path_default = '/etc/sysconfig/openafs-client'
+      $init_script_default        = '/etc/init.d/openafs-client'
+      $init_template_default      = 'openafs-client-Suse'
       $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit' ]
     }
 # Placeholders only, untested
@@ -33,12 +39,16 @@ class afs (
 #      $cache_path_default         = '/var/cache/openafs'
 #      $config_cache_path_default  = '/etc/openafs/cacheinfo'
 #      $config_client_path_default = '/etc/sysconfig/openafs-client'
+#      $init_script_default        = '/etc/init.d/openafs-client'
+#      $init_template_default      = 'openafs-client-Debian'
 #      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5' ]
 #    }
 #    'Solaris': {
 #      $cache_path_default         = '/usr/vice/cache'
 #      $config_cache_path_default  = '/usr/vice/etc/cacheinfo'
 #      $config_client_path_default = '/usr/vice/etc/sysconfig/openafs-client'
+#      $init_script_default        = '/etc/init.d/openafs-client'
+#      $init_template_default      = 'openafs-client-Solaris'
 #      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5' ]
 #    }
     default: {
@@ -68,6 +78,16 @@ class afs (
     default        => $config_client_path
   }
 
+  $init_script_real = $init_script ? {
+    'USE_DEFAULTS' => $init_script_default,
+    default        => $init_script
+  }
+
+  $init_template_real = $init_template ? {
+    'USE_DEFAULTS' => $init_template_default,
+    default        => $init_template
+  }
+
   $packages_real = $packages ? {
     'USE_DEFAULTS' => $packages_default,
     default        => $packages
@@ -84,6 +104,16 @@ class afs (
   package { 'OpenAFS_packages':
     ensure => installed,
     name   => $packages_real,
+  }
+
+  file  { 'afs_init_script' :
+    ensure  => file,
+    path    => $init_script_real,
+    owner   => 'root',
+    group   => 'root',
+    mode    => '0755',
+    content => 'puppet:///modules/afs/${init_template_real}',
+    require => Package['OpenAFS_packages'],
   }
 
   file  { 'afs_config_cache' :
