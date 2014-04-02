@@ -57,13 +57,6 @@ ACHTUNG!: real occupied space can be 5% larger, due to metadata
 - *Default*: '1000000'
 
 
-config_cache_path
------------------
-Path to the cacheinfo configuration file.
-
-- *Default*: 'USE_DEFAULTS', based on OS platform
-
-
 config_client_args
 ------------------
 AFSD_ARGS / parameters to be passed to AFS daemon while starting.

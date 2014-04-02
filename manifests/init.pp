@@ -8,7 +8,6 @@ class afs (
   $afs_suidcells        = undef,
   $cache_path           = 'USE_DEFAULTS',
   $cache_size           = '1000000',
-  $config_cache_path    = 'USE_DEFAULTS',
   $config_client_args   = '-dynroot -afsdb -daemons 6 -volumes 1000',
   $config_client_dkms   = 'USE_DEFAULTS',
   $config_client_path   = 'USE_DEFAULTS',
@@ -25,7 +24,6 @@ class afs (
     'RedHat': {
       $afs_config_path_default    = '/usr/vice/etc'
       $cache_path_default         = '/usr/vice/cache'
-      $config_cache_path_default  = '/usr/vice/etc/cacheinfo'
       $config_client_dkms_default = 'true'
       $config_client_path_default = '/etc/sysconfig/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
@@ -35,7 +33,6 @@ class afs (
     'Suse': {
       $afs_config_path_default    = '/etc/openafs'
       $cache_path_default         = '/var/cache/openafs'
-      $config_cache_path_default  = '/etc/openafs/cacheinfo'
       $config_client_dkms_default = 'false'
       $config_client_path_default = '/etc/sysconfig/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
@@ -46,7 +43,6 @@ class afs (
 #    'Debian': {
 #      $afs_config_path_default    = '/etc/openafs'
 #      $cache_path_default         = '/var/cache/openafs'
-#      $config_cache_path_default  = '/etc/openafs/cacheinfo'
 #      $config_client_dkms_default = 'false'
 #      $config_client_path_default = '/etc/sysconfig/openafs-client'
 #      $init_script_default        = '/etc/init.d/openafs-client'
@@ -56,7 +52,6 @@ class afs (
 #    'Solaris': {
 #      $afs_config_path_default    = '/etc/openafs'
 #      $cache_path_default         = '/usr/vice/cache'
-#      $config_cache_path_default  = '/usr/vice/etc/cacheinfo'
 #      $config_client_dkms_default = 'false'
 #      $config_client_path_default = '/usr/vice/etc/sysconfig/openafs-client'
 #      $init_script_default        = '/etc/init.d/openafs-client'
@@ -82,11 +77,6 @@ class afs (
   }
 
   $cache_size_real = $cache_size
-
-  $config_cache_path_real = $config_cache_path ? {
-    'USE_DEFAULTS' => $config_cache_path_default,
-    default        => $config_cache_path
-  }
 
   $config_client_args_real = $config_client_args
 
@@ -139,9 +129,9 @@ class afs (
     require => Package['OpenAFS_packages'],
   }
 
-  file  { 'afs_config_cache_path' :
+  file  { 'afs_config_cacheinfo' :
     ensure  => file,
-    path    => $config_cache_path_real,
+    path    => "${afs_config_path_real}/cacheinfo",
     owner   => 'root',
     group   => 'root',
     mode    => '0644',
