@@ -73,11 +73,27 @@ candidates for tuning: -stat, -volumes
 - *Default*: '-dynroot -afsdb -daemons 6 -volumes 1000'
 
 
+config_client_dkms
+------------------
+Boolean to control the AFS kernel module handling via DKMS or the openafs start-script.
+At the moment only available on RHEL platform. It will be ignored on other platforms.
+
+- *Default*: 'USE_DEFAULTS', based on OS platform
+
+
 config_client_path
 ------------------
 Path to the openafs-client configuration file.
 
 - *Default*: 'USE_DEFAULTS', based on OS platform
+
+
+config_client_update
+--------------------
+Boolean trigger for the selfupdating routine in the init script.
+If set to true, the init skript checks for updated AFS packages in the available repositories and installs them.
+
+- *Default*: false
 
 
 create_symlinks
@@ -124,11 +140,3 @@ packages
 Array of needed OpenAFS packages
 
 - *Default*: 'USE_DEFAULTS', based on OS platform
-
-
-update
-------
-Trigger for the selfupdating routine in the init script.
-If set to true, the init skript checks for updated AFS packages in the available repositories and installs them.
-
-- *Default*: false
