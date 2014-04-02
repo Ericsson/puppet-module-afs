@@ -127,6 +127,8 @@ class afs (
     name   => $packages_real,
   }
 
+  common::mkdir_p { $afs_config_path_real: }
+
   file  { 'afs_init_script' :
     ensure  => file,
     path    => $init_script_real,
@@ -144,7 +146,7 @@ class afs (
     group   => 'root',
     mode    => '0644',
     content => template('afs/cacheinfo.erb'),
-    require => Package['OpenAFS_packages'],
+    require => Common::Mkdir_p[$afs_config_path_real],
   }
 
   file  { 'afs_config_client' :
@@ -165,7 +167,7 @@ class afs (
       group   => 'root',
       mode    => '0644',
       content => "$afs_suidcells_real\n",
-      require => Package['OpenAFS_packages'],
+      require => Common::Mkdir_p[$afs_config_path_real],
     }
   }
 
@@ -177,7 +179,7 @@ class afs (
       group   => 'root',
       mode    => '0644',
       content => "$afs_cell_real\n",
-      require => Package['OpenAFS_packages'],
+      require => Common::Mkdir_p[$afs_config_path_real],
     }
   }
 
@@ -189,7 +191,7 @@ class afs (
       group   => 'root',
       mode    => '0644',
       content => "$afs_cellserverdb_real\n",
-      require => Package['OpenAFS_packages'],
+      require => Common::Mkdir_p[$afs_config_path_real],
     }
   }
 
