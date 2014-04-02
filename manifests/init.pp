@@ -3,6 +3,9 @@
 # Manage OpenAFS
 
 class afs (
+  $afs_cell           = undef,
+  $afs_config_path    = 'USE_DEFAULTS',
+  $afs_suidcells      = undef,
   $cache_path         = 'USE_DEFAULTS',
   $cache_size         = '1000000',
   $config_cache_path  = 'USE_DEFAULTS',
@@ -19,6 +22,7 @@ class afs (
   # <define USE_DEFAULTS>
   case $::osfamily {
     'RedHat': {
+      $afs_config_path_default    = '/usr/vice/etc'
       $cache_path_default         = '/usr/vice/cache'
       $config_cache_path_default  = '/usr/vice/etc/cacheinfo'
       $config_client_path_default = '/etc/sysconfig/openafs-client'
@@ -27,6 +31,7 @@ class afs (
       $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs' ]
     }
     'Suse': {
+      $afs_config_path_default    = '/etc/openafs'
       $cache_path_default         = '/var/cache/openafs'
       $config_cache_path_default  = '/etc/openafs/cacheinfo'
       $config_client_path_default = '/etc/sysconfig/openafs-client'
@@ -36,6 +41,7 @@ class afs (
     }
 # Placeholders only, untested
 #    'Debian': {
+#      $afs_config_path_default    = '/etc/openafs'
 #      $cache_path_default         = '/var/cache/openafs'
 #      $config_cache_path_default  = '/etc/openafs/cacheinfo'
 #      $config_client_path_default = '/etc/sysconfig/openafs-client'
@@ -44,6 +50,7 @@ class afs (
 #      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5' ]
 #    }
 #    'Solaris': {
+#      $afs_config_path_default    = '/etc/openafs'
 #      $cache_path_default         = '/usr/vice/cache'
 #      $config_cache_path_default  = '/usr/vice/etc/cacheinfo'
 #      $config_client_path_default = '/usr/vice/etc/sysconfig/openafs-client'
@@ -59,6 +66,11 @@ class afs (
 
 
   # <USE_DEFAULTS ?>
+  $afs_config_path_real = $afs_config_path ? {
+    'USE_DEFAULTS' => $afs_config_path_default,
+    default        => $afs_config_path
+  }
+
   $cache_path_real = $cache_path ? {
     'USE_DEFAULTS' => $cache_path_default,
     default        => $cache_path
@@ -134,6 +146,30 @@ class afs (
     mode    => '0644',
     content => template('afs/openafs-client.erb'),
     require => Package['OpenAFS_packages'],
+  }
+
+  if $afs_suidcells != undef {
+    file  { 'afs_config_suidcells' :
+      ensure  => file,
+      path    => "${afs_config_path_real}/SuidCells",
+      owner   => 'root',
+      group   => 'root',
+      mode    => '0644',
+      content => "$afs_suidcells\n",
+      require => Package['OpenAFS_packages'],
+    }
+  }
+
+  if $afs_cell != undef {
+    file  { 'afs_config_thiscell' :
+      ensure  => file,
+      path    => "${afs_config_path_real}/ThisCell",
+      owner   => 'root',
+      group   => 'root',
+      mode    => '0644',
+      content => "$afs_cell\n",
+      require => Package['OpenAFS_packages'],
+    }
   }
 
   service { 'afs_openafs_client_service':
