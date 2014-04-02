@@ -4,6 +4,7 @@
 
 class afs (
   $afs_cell             = undef,
+  $afs_cellserverdb     = undef,
   $afs_config_path      = 'USE_DEFAULTS',
   $afs_suidcells        = undef,
   $cache_path           = 'USE_DEFAULTS',
@@ -66,10 +67,17 @@ class afs (
 
 
   # <USE_DEFAULTS ?>
+
+  $afs_cellreal = $afs_cell
+
+  $afs_cellserverdb_real = $afs_cellserverdb
+
   $afs_config_path_real = $afs_config_path ? {
     'USE_DEFAULTS' => $afs_config_path_default,
     default        => $afs_config_path
   }
+
+  $afs_suidcells_real = $afs_suidcells
 
   $cache_path_real = $cache_path ? {
     'USE_DEFAULTS' => $cache_path_default,
@@ -149,26 +157,38 @@ class afs (
     require => Package['OpenAFS_packages'],
   }
 
-  if $afs_suidcells != undef {
+  if $afs_suidcells_real != undef {
     file  { 'afs_config_suidcells' :
       ensure  => file,
       path    => "${afs_config_path_real}/SuidCells",
       owner   => 'root',
       group   => 'root',
       mode    => '0644',
-      content => "$afs_suidcells\n",
+      content => "$afs_suidcells_real\n",
       require => Package['OpenAFS_packages'],
     }
   }
 
-  if $afs_cell != undef {
+  if $afs_cell_real != undef {
     file  { 'afs_config_thiscell' :
       ensure  => file,
       path    => "${afs_config_path_real}/ThisCell",
       owner   => 'root',
       group   => 'root',
       mode    => '0644',
-      content => "$afs_cell\n",
+      content => "$afs_cell_real\n",
+      require => Package['OpenAFS_packages'],
+    }
+  }
+
+  if $afs_cellserverdb_real != undef {
+    file  { 'afs_config_thiscell' :
+      ensure  => file,
+      path    => "${afs_config_path_real}/CellServDB",
+      owner   => 'root',
+      group   => 'root',
+      mode    => '0644',
+      content => "$afs_cellserverdb_real\n",
       require => Package['OpenAFS_packages'],
     }
   }

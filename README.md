@@ -24,6 +24,14 @@ This file will be ignored if the default value is not changed.
 - *Default*: undef
 
 
+afs_cellserverdb
+----------------
+String with content of the file $afs_config_path/CellServDB.
+This file will be ignored if the default value is not changed.
+
+- *Default*: undef
+
+
 afs_config_path
 ---------------
 Path to the OpenAFS config directory.
