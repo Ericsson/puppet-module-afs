@@ -112,7 +112,7 @@ class afs (
     owner   => 'root',
     group   => 'root',
     mode    => '0755',
-    content => 'puppet:///modules/afs/${init_template_real}',
+    source  => "puppet:///modules/afs/${init_template_real}",
     require => Package['OpenAFS_packages'],
   }
 
