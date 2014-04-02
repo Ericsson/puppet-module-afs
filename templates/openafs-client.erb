@@ -36,4 +36,14 @@ AFSD_ARGS="<%= @config_client_args_real %>"
 # The client need a configured and activated repository.
 # Available options: false | true
 # UPDATE="false"
-UPDATE="<%= @update_real %>"
+UPDATE="<%= @config_client_update_real %>"
+
+#
+# This section is to control the AFS kernel module handling via DKMS or the openafs start-script.
+# At the moment only available on RHEL platform. On SLE no DKMS available.
+# It will be ignored on other platforms.
+# The package openafs-kernel-source is needed for the start-script method.
+# For dkms the following packages are needed: dkms dkms-openafs
+# Available options: false | true
+# DKMS="true"
+DKMS="<%= @config_client_dkms_real %>"

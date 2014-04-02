@@ -3,20 +3,21 @@
 # Manage OpenAFS
 
 class afs (
-  $afs_cell           = undef,
-  $afs_config_path    = 'USE_DEFAULTS',
-  $afs_suidcells      = undef,
-  $cache_path         = 'USE_DEFAULTS',
-  $cache_size         = '1000000',
-  $config_cache_path  = 'USE_DEFAULTS',
-  $config_client_args = '-dynroot -afsdb -daemons 6 -volumes 1000',
-  $config_client_path = 'USE_DEFAULTS',
-  $create_symlinks    = false,
-  $init_script        = 'USE_DEFAULTS',
-  $init_template      = 'USE_DEFAULTS',
-  $links              = undef,
-  $packages           = 'USE_DEFAULTS',
-  $update             = false,
+  $afs_cell             = undef,
+  $afs_config_path      = 'USE_DEFAULTS',
+  $afs_suidcells        = undef,
+  $cache_path           = 'USE_DEFAULTS',
+  $cache_size           = '1000000',
+  $config_cache_path    = 'USE_DEFAULTS',
+  $config_client_args   = '-dynroot -afsdb -daemons 6 -volumes 1000',
+  $config_client_dkms   = 'USE_DEFAULTS',
+  $config_client_path   = 'USE_DEFAULTS',
+  $config_client_update = false,
+  $create_symlinks      = false,
+  $init_script          = 'USE_DEFAULTS',
+  $init_template        = 'USE_DEFAULTS',
+  $links                = undef,
+  $packages             = 'USE_DEFAULTS',
 ) {
 
   # <define USE_DEFAULTS>
@@ -25,6 +26,7 @@ class afs (
       $afs_config_path_default    = '/usr/vice/etc'
       $cache_path_default         = '/usr/vice/cache'
       $config_cache_path_default  = '/usr/vice/etc/cacheinfo'
+      $config_client_dkms_default = 'true'
       $config_client_path_default = '/etc/sysconfig/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
       $init_template_default      = 'openafs-client-RedHat'
@@ -34,6 +36,7 @@ class afs (
       $afs_config_path_default    = '/etc/openafs'
       $cache_path_default         = '/var/cache/openafs'
       $config_cache_path_default  = '/etc/openafs/cacheinfo'
+      $config_client_dkms_default = 'false'
       $config_client_path_default = '/etc/sysconfig/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
       $init_template_default      = 'openafs-client-Suse'
@@ -44,6 +47,7 @@ class afs (
 #      $afs_config_path_default    = '/etc/openafs'
 #      $cache_path_default         = '/var/cache/openafs'
 #      $config_cache_path_default  = '/etc/openafs/cacheinfo'
+#      $config_client_dkms_default = 'false'
 #      $config_client_path_default = '/etc/sysconfig/openafs-client'
 #      $init_script_default        = '/etc/init.d/openafs-client'
 #      $init_template_default      = 'openafs-client-Debian'
@@ -53,6 +57,7 @@ class afs (
 #      $afs_config_path_default    = '/etc/openafs'
 #      $cache_path_default         = '/usr/vice/cache'
 #      $config_cache_path_default  = '/usr/vice/etc/cacheinfo'
+#      $config_client_dkms_default = 'false'
 #      $config_client_path_default = '/usr/vice/etc/sysconfig/openafs-client'
 #      $init_script_default        = '/etc/init.d/openafs-client'
 #      $init_template_default      = 'openafs-client-Solaris'
@@ -85,10 +90,17 @@ class afs (
 
   $config_client_args_real = $config_client_args
 
+  $config_client_dkms_real = $config_client_dkms ? {
+    'USE_DEFAULTS' => $config_client_dkms_default,
+    default        => $config_client_dkms
+  }
+
   $config_client_path_real = $config_client_path ? {
     'USE_DEFAULTS' => $config_client_path_default,
     default        => $config_client_path
   }
+
+  $config_client_update_real = $config_client_update
 
   $init_script_real = $init_script ? {
     'USE_DEFAULTS' => $init_script_default,
@@ -104,7 +116,6 @@ class afs (
     'USE_DEFAULTS' => $packages_default,
     default        => $packages
   }
-  $update_real             = $update
   # </USE_DEFAULTS ?>
 
 
@@ -128,7 +139,7 @@ class afs (
     require => Package['OpenAFS_packages'],
   }
 
-  file  { 'afs_config_cache' :
+  file  { 'afs_config_cache_path' :
     ensure  => file,
     path    => $config_cache_path_real,
     owner   => 'root',
