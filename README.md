@@ -16,11 +16,33 @@ This module has been tested to work on the following systems.
 
 # Parameters #
 
+afs_cell
+--------
+String with content of the file $afs_config_path/ThisCell.
+This file will be ignored if the default value is not changed.
+
+- *Default*: undef
+
+
+afs_config_path
+---------------
+Path to the OpenAFS config directory.
+
+- *Default*: 'USE_DEFAULTS', based on OS platform
+
+
+afs_suidcells
+-------------
+String with content of the file $afs_config_path/SuidCells.
+This file will be ignored if the default value is not changed.
+
+- *Default*: undef
+
+
 cache_path
 ----------
 Path to cache storage when using disk cache.
 Recommended: use a dedicated partition as disk cache.
-
 
 - *Default*: 'USE_DEFAULTS', based on OS platform
 
@@ -63,6 +85,20 @@ create_symlinks
 Create symlinks for convenient access to AFS structure. Path and target are taken from hash in $links.
 
 - *Default*: false
+
+
+init_script
+-----------
+Filename for the init script.
+
+- *Default*: 'USE_DEFAULTS', based on OS platform
+
+
+init_template
+-------------
+Name of the template file to be used for $init_script.
+
+- *Default*: 'USE_DEFAULTS', based on OS platform
 
 
 links
