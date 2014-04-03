@@ -26,7 +26,7 @@ class afs (
     'RedHat': {
       $afs_config_path_default    = '/usr/vice/etc'
       $cache_path_default         = '/usr/vice/cache'
-      $config_client_dkms_default = 'true'
+      $config_client_dkms_default = true
       $config_client_path_default = '/etc/sysconfig/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
       $init_template_default      = 'openafs-client-RedHat'
@@ -35,7 +35,7 @@ class afs (
     'Suse': {
       $afs_config_path_default    = '/etc/openafs'
       $cache_path_default         = '/var/cache/openafs'
-      $config_client_dkms_default = 'false'
+      $config_client_dkms_default = false
       $config_client_path_default = '/etc/sysconfig/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
       $init_template_default      = 'openafs-client-Suse'
@@ -45,7 +45,7 @@ class afs (
 #    'Debian': {
 #      $afs_config_path_default    = '/etc/openafs'
 #      $cache_path_default         = '/var/cache/openafs'
-#      $config_client_dkms_default = 'false'
+#      $config_client_dkms_default = false
 #      $config_client_path_default = '/etc/sysconfig/openafs-client'
 #      $init_script_default        = '/etc/init.d/openafs-client'
 #      $init_template_default      = 'openafs-client-Debian'
@@ -54,7 +54,7 @@ class afs (
 #    'Solaris': {
 #      $afs_config_path_default    = '/etc/openafs'
 #      $cache_path_default         = '/usr/vice/cache'
-#      $config_client_dkms_default = 'false'
+#      $config_client_dkms_default = false
 #      $config_client_path_default = '/usr/vice/etc/sysconfig/openafs-client'
 #      $init_script_default        = '/etc/init.d/openafs-client'
 #      $init_template_default      = 'openafs-client-Solaris'
@@ -83,7 +83,10 @@ class afs (
   # </USE_DEFAULT vs OS defaults>
 
 
-  # <USE_DEFAULTS ?>
+  # <assign variables>
+  # Change 'USE_DEFAULTS' to OS specific default values
+  # Convert strings with booleans to real boolean, if needed
+  # Create *_real variables for the rest too
 
   $afs_cell_real = $afs_cell
 
@@ -105,9 +108,13 @@ class afs (
 
   $config_client_args_real = $config_client_args
 
-  $config_client_dkms_real = $config_client_dkms ? {
-    'USE_DEFAULTS' => $config_client_dkms_default,
-    default        => $config_client_dkms
+  if type($config_client_dkms) == 'boolean' {
+    $config_client_dkms_real = $config_client_dkms
+  } else {
+    $config_client_dkms_real = $config_client_dkms ? {
+      'USE_DEFAULTS' => $config_client_dkms_default,
+      default        => str2bool($config_client_dkms)
+    }
   }
 
   $config_client_path_real = $config_client_path ? {
@@ -115,7 +122,20 @@ class afs (
     default        => $config_client_path
   }
 
-  $config_client_update_real = $config_client_update
+  if type($config_client_update) == 'boolean' {
+    $config_client_update_real = $config_client_update
+  } else {
+    $config_client_update_real = $config_client_update ? {
+      'USE_DEFAULTS' => $config_client_update_default,
+      default        => str2bool($config_client_update)
+    }
+  }
+
+  if type($create_symlinks) == 'boolean' {
+    $create_symlinks_real = $create_symlinks
+  } else {
+    $create_symlinks_real = str2bool($create_symlinks)
+  }
 
   $init_script_real = $init_script ? {
     'USE_DEFAULTS' => $init_script_default,
@@ -131,10 +151,46 @@ class afs (
     'USE_DEFAULTS' => $packages_default,
     default        => $packages
   }
-  # </USE_DEFAULTS ?>
+  # </assign variables>
 
 
   # <validating variables>
+  if ($afs_cell_real != undef) and (is_domain_name($afs_cell_real) != true) {
+    fail('Only domain names are allowed in the afs::afs_cell param.')
+  }
+
+  if $afs_cellserverdb_real != undef {
+    validate_string($afs_cellserverdb_real)
+  }
+
+  validate_absolute_path($afs_config_path_real)
+
+  if ($afs_suidcells_real != undef) and (is_domain_name($afs_suidcells_real) != true) {
+    fail('Only domain names are allowed in the afs::afs_suidcells param.')
+  }
+
+  validate_absolute_path($cache_path_real)
+
+  if !is_integer($cache_size_real) {
+    fail('Only integers are allowed in the afs::cache_size param.')
+  }
+
+  validate_string($config_client_args_real)
+
+  validate_bool($config_client_dkms_real)
+
+  validate_absolute_path($config_client_path_real)
+
+  validate_bool($config_client_update_real)
+
+  validate_bool($create_symlinks_real)
+
+  validate_absolute_path($init_script_real)
+
+  validate_string($init_template_real)
+
+  validate_array($packages_real)
+
   # </validating variables>
 
 
@@ -228,7 +284,7 @@ class afs (
 
 
   # <create symlinks>
-  if $create_symlinks == true {
+  if $create_symlinks_real == true {
 
     $afs_create_link_defaults = {
       'ensure' => 'link',
