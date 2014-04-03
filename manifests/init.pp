@@ -195,12 +195,16 @@ class afs (
     }
   }
 
+  # THIS SERVICE SHOULD NOT BE RESTARTED
+  # Restarting it may cause AFS module and kernel problems.
   service { 'afs_openafs_client_service':
     ensure     => 'running',
     enable     => true,
     name       => 'openafs-client',
-    hasrestart => true,
     hasstatus  => true,
+    hasrestart => false,
+    restart    => '/bin/true',
+    require => Package['OpenAFS_packages'],
   }
 
   # <Install & Config>
