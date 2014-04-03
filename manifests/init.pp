@@ -20,7 +20,8 @@ class afs (
   $packages             = 'USE_DEFAULTS',
 ) {
 
-  # <define USE_DEFAULTS>
+  # <define os default values>
+  # Set $os_defaults_missing to true for unspecified osfamilies
   case $::osfamily {
     'RedHat': {
       $afs_config_path_default    = '/usr/vice/etc'
@@ -60,10 +61,26 @@ class afs (
 #      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5' ]
 #    }
     default: {
-      fail("afs supports osfamilies RedHat, Suse and Solaris. Detected osfamily is <${::osfamily}>.")
+      $os_defaults_missing = true
     }
   }
-  # </define USE_DEFAULTS>
+  # </define os default values>
+
+
+  # <USE_DEFAULT vs OS defaults>
+  # Check if 'USE_DEFAULTS' is used anywhere without having OS default value
+  if (
+    ($afs_config_path == 'USE_DEFAULTS') or
+    ($cache_path == 'USE_DEFAULTS') or
+    ($config_client_dkms == 'USE_DEFAULTS') or
+    ($config_client_path == 'USE_DEFAULTS') or
+    ($init_script == 'USE_DEFAULTS') or
+    ($init_template == 'USE_DEFAULTS') or
+    ($packages == 'USE_DEFAULTS')
+  ) and $os_defaults_missing == true {
+      fail("Sorry, I don't know default values for $::osfamily yet :( Please provide specific values to the afs module.")
+  }
+  # </USE_DEFAULT vs OS defaults>
 
 
   # <USE_DEFAULTS ?>

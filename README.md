@@ -9,10 +9,13 @@ The module installs and configures OpenAFS.
 
 # Compatability #
 
-This module has been tested to work on the following systems.
+This module provides OS default values for these OSfamilies:
 
- * RHEL 6
- * Suse 11
+ * RedHat
+ * Suse
+
+For other OSfamilies support, please specify all parameters which defaults to 'USE_DEFAULTS'.
+
 
 # Parameters #
 
