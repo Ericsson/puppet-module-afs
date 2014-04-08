@@ -19,17 +19,17 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 # Parameters #
 
-afs_cell
---------
-String with content of the file $afs_config_path/ThisCell.
+afs_cellserverdb
+----------------
+String with content of the file $afs_config_path/CellServDB.
 This file will be ignored if the default value is not changed.
 
 - *Default*: undef
 
 
-afs_cellserverdb
-----------------
-String with content of the file $afs_config_path/CellServDB.
+afs_cell
+--------
+String with content of the file $afs_config_path/ThisCell.
 This file will be ignored if the default value is not changed.
 
 - *Default*: undef
@@ -40,6 +40,68 @@ afs_config_path
 Path to the OpenAFS config directory.
 
 - *Default*: 'USE_DEFAULTS', based on OS platform
+
+
+afs_cron_job_content
+--------------------
+String with OpenAFS cron job command. Example: '[ -x /afs_maintenance.sh ] && /afs_maintenance.sh'
+Do not use multi line content when $afs_cron_job_interval is set to 'specific'.
+
+- *Default*: undef
+
+
+afs_cron_job_hour
+-----------------
+Integer between 0 and 23. The hour at which to run the cron job.
+If set to <undef> it will become '*' at creation time.
+
+- *Default*: undef
+
+
+afs_cron_job_interval
+---------------------
+String to specify when to run the cron job.
+
+Set to 'specific' to create cron jobs. It uses $afs_cron_job_minute/hour/weekday/month/monthday
+to specify when to run the cron job.
+
+On systems that support fragment files in /etc/cron.(hourly|daily|weekly|monthly) you can use
+'hourly' ,'daily', 'weekly' and 'monthly' to create a file in the according directory.
+
+This module can only create or change cron jobs, there is no housekeeping support to delete them.
+
+
+afs_cron_job_minute
+-------------------
+Integer between 0 and 59. The minute at which to run the cron job.
+ACHTUNG: If set to <undef> it will become '*' at creation time.
+Default to 42 for sanity reasons.
+
+- *Default*: 42
+
+
+afs_cron_job_monthday
+---------------------
+Integer between 1 and 31. The day of the month on which to run the cron job.
+If set to <undef> it will become '*' at creation time.
+
+- *Default*: undef
+
+
+afs_cron_job_month
+------------------
+Integer between 1 and 12. The month of the year in which to run the cron job.
+If set to <undef> it will become '*' at creation time.
+
+- *Default*: undef
+
+
+afs_cron_job_weekday
+--------------------
+Integer between 0 and 7. The weekday on which to run the cron job. 0 and 7 are both for Sundays.
+If set to <undef> it will become '*' at creation time.
+
+- *Default*: undef
 
 
 afs_suidcells
