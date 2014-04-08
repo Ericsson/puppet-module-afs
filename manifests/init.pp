@@ -3,21 +3,28 @@
 # Manage OpenAFS
 
 class afs (
-  $afs_cell             = undef,
-  $afs_cellserverdb     = undef,
-  $afs_config_path      = 'USE_DEFAULTS',
-  $afs_suidcells        = undef,
-  $cache_path           = 'USE_DEFAULTS',
-  $cache_size           = '1000000',
-  $config_client_args   = '-dynroot -afsdb -daemons 6 -volumes 1000',
-  $config_client_dkms   = 'USE_DEFAULTS',
-  $config_client_path   = 'USE_DEFAULTS',
-  $config_client_update = false,
-  $create_symlinks      = false,
-  $init_script          = 'USE_DEFAULTS',
-  $init_template        = 'USE_DEFAULTS',
-  $links                = undef,
-  $packages             = 'USE_DEFAULTS',
+  $afs_cellserverdb      = undef,
+  $afs_cell              = undef,
+  $afs_config_path       = 'USE_DEFAULTS',
+  $afs_cron_job_content  = undef,
+  $afs_cron_job_hour     = undef,
+  $afs_cron_job_interval = undef,
+  $afs_cron_job_minute   = 42,
+  $afs_cron_job_monthday = undef,
+  $afs_cron_job_month    = undef,
+  $afs_cron_job_weekday  = undef,
+  $afs_suidcells         = undef,
+  $cache_path            = 'USE_DEFAULTS',
+  $cache_size            = '1000000',
+  $config_client_args    = '-dynroot -afsdb -daemons 6 -volumes 1000',
+  $config_client_dkms    = 'USE_DEFAULTS',
+  $config_client_path    = 'USE_DEFAULTS',
+  $config_client_update  = false,
+  $create_symlinks       = false,
+  $init_script           = 'USE_DEFAULTS',
+  $init_template         = 'USE_DEFAULTS',
+  $links                 = undef,
+  $packages              = 'USE_DEFAULTS',
 ) {
 
   # <define os default values>
@@ -88,14 +95,28 @@ class afs (
   # Convert strings with booleans to real boolean, if needed
   # Create *_real variables for the rest too
 
-  $afs_cell_real = $afs_cell
-
   $afs_cellserverdb_real = $afs_cellserverdb
+
+  $afs_cell_real = $afs_cell
 
   $afs_config_path_real = $afs_config_path ? {
     'USE_DEFAULTS' => $afs_config_path_default,
     default        => $afs_config_path
   }
+
+  $afs_cron_job_content_real = $afs_cron_job_content
+
+  $afs_cron_job_hour_real = $afs_cron_job_hour
+
+  $afs_cron_job_interval_real = $afs_cron_job_interval
+
+  $afs_cron_job_minute_real = $afs_cron_job_minute
+
+  $afs_cron_job_monthday_real = $afs_cron_job_monthday
+
+  $afs_cron_job_month_real = $afs_cron_job_month
+
+  $afs_cron_job_weekday_real = $afs_cron_job_weekday
 
   $afs_suidcells_real = $afs_suidcells
 
@@ -155,15 +176,43 @@ class afs (
 
 
   # <validating variables>
-  if ($afs_cell_real != undef) and (is_domain_name($afs_cell_real) != true) {
-    fail('Only domain names are allowed in the afs::afs_cell param.')
-  }
-
   if $afs_cellserverdb_real != undef {
     validate_string($afs_cellserverdb_real)
   }
 
+  if ($afs_cell_real != undef) and (is_domain_name($afs_cell_real) != true) {
+    fail('Only domain names are allowed in the afs::afs_cell param.')
+  }
+
   validate_absolute_path($afs_config_path_real)
+
+  if $afs_cron_job_content_real != undef {
+    validate_string($afs_cron_job_content_real)
+  }
+
+  if ($afs_cron_job_hour_real != undef) and (is_numeric($afs_cron_job_hour_real) != true) {
+    fail('Only numbers are allowed in the afs::afs_cron_job_hour param.')
+  }
+
+  if $afs_cron_job_interval_real != undef {
+    validate_re($afs_cron_job_interval_real, '^(hourly)|(daily)|(weekly)|(monthly)|(specific)$', 'Only <hourly>, <daily>, <weekly>, <monthly> and <specific> are allowed in the afs::afs_cron_job_interval param.')
+  }
+
+  if ($afs_cron_job_minute_real != undef) and (is_numeric($afs_cron_job_minute_real) != true) {
+    fail('Only numbers are allowed in the afs::afs_cron_job_minute param.')
+  }
+
+  if ($afs_cron_job_monthday_real != undef) and (is_numeric($afs_cron_job_monthday_real) != true) {
+    fail('Only numbers are allowed in the afs::afs_cron_job_monthday param.')
+  }
+
+  if ($afs_cron_job_month_real != undef) and (is_numeric($afs_cron_job_month_real) != true) {
+    fail('Only numbers are allowed in the afs::afs_cron_job_month param.')
+  }
+
+  if ($afs_cron_job_weekday_real != undef) and (is_numeric($afs_cron_job_weekday_real) != true) {
+    fail('Only numbers are allowed in the afs::afs_cron_job_weekday param.')
+  }
 
   if ($afs_suidcells_real != undef) and (is_domain_name($afs_suidcells_real) != true) {
     fail('Only domain names are allowed in the afs::afs_suidcells param.')
@@ -268,6 +317,33 @@ class afs (
     }
   }
 
+  if ($afs_cron_job_content_real != undef) and ($afs_cron_job_interval_real != undef) {
+    if $afs_cron_job_interval_real == 'specific' {
+      cron { 'afs_cron_job':
+        ensure   => present,
+        command  => $afs_cron_job_content_real,
+        user     => 'root',
+        minute   => $afs_cron_job_minute_real,
+        hour     => $afs_cron_job_hour_real,
+        month    => $afs_cron_job_month_real,
+        weekday  => $afs_cron_job_weekday_real,
+        monthday => $afs_cron_job_monthday_real,
+        require  => Package['OpenAFS_packages'],
+      }
+    }
+    else {
+      file  { 'afs_cron_job' :
+        ensure  => file,
+        path    => "/etc/cron.${afs_cron_job_interval_real}/afs_cron_job",
+        owner   => 'root',
+        group   => 'root',
+        mode    => '0755',
+        content => $afs_cron_job_content_real,
+        require => Package['OpenAFS_packages'],
+      }
+    }
+  }
+
   # THIS SERVICE SHOULD NOT BE RESTARTED
   # Restarting it may cause AFS module and kernel problems.
   service { 'afs_openafs_client_service':
@@ -277,7 +353,7 @@ class afs (
     hasstatus  => true,
     hasrestart => false,
     restart    => '/bin/true',
-    require => Package['OpenAFS_packages'],
+    require    => Package['OpenAFS_packages'],
   }
 
   # <Install & Config>
