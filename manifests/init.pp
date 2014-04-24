@@ -24,7 +24,10 @@ class afs (
   $init_script           = 'USE_DEFAULTS',
   $init_template         = 'USE_DEFAULTS',
   $links                 = undef,
-  $packages              = 'USE_DEFAULTS',
+  $package_adminfile     = undef,
+  $package_name          = 'USE_DEFAULTS',
+  $package_source        = undef,
+  $service_provider      = undef,
 ) {
 
   # <define os default values>
@@ -37,7 +40,7 @@ class afs (
       $config_client_path_default = '/etc/sysconfig/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
       $init_template_default      = 'openafs-client-RedHat'
-      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs' ]
+      $package_name_default       = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs' ]
     }
     'Suse': {
       $afs_config_path_default    = '/etc/openafs'
@@ -46,7 +49,16 @@ class afs (
       $config_client_path_default = '/etc/sysconfig/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
       $init_template_default      = 'openafs-client-Suse'
-      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit' ]
+      $package_name_default       = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit' ]
+    }
+    'Solaris': {
+      $afs_config_path_default    = '/usr/vice/etc'
+      $cache_path_default         = '/usr/vice/cache'
+      $config_client_dkms_default = false
+      $config_client_path_default = '/usr/vice/etc/sysconfig/openafs-client'
+      $init_script_default        = '/etc/init.d/openafs-client'
+      $init_template_default      = 'openafs-client-Solaris'
+      $package_name_default       = [ 'EISopenafs-166-v8' ]
     }
 # Placeholders only, untested
 #    'Debian': {
@@ -56,16 +68,7 @@ class afs (
 #      $config_client_path_default = '/etc/sysconfig/openafs-client'
 #      $init_script_default        = '/etc/init.d/openafs-client'
 #      $init_template_default      = 'openafs-client-Debian'
-#      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5' ]
-#    }
-#    'Solaris': {
-#      $afs_config_path_default    = '/etc/openafs'
-#      $cache_path_default         = '/usr/vice/cache'
-#      $config_client_dkms_default = false
-#      $config_client_path_default = '/usr/vice/etc/sysconfig/openafs-client'
-#      $init_script_default        = '/etc/init.d/openafs-client'
-#      $init_template_default      = 'openafs-client-Solaris'
-#      $packages_default           = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5' ]
+#      $package_name_default       = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5' ]
 #    }
     default: {
       $os_defaults_missing = true
@@ -83,7 +86,7 @@ class afs (
     ($config_client_path == 'USE_DEFAULTS') or
     ($init_script == 'USE_DEFAULTS') or
     ($init_template == 'USE_DEFAULTS') or
-    ($packages == 'USE_DEFAULTS')
+    ($package_name == 'USE_DEFAULTS')
   ) and $os_defaults_missing == true {
       fail("Sorry, I don't know default values for $::osfamily yet :( Please provide specific values to the afs module.")
   }
@@ -168,10 +171,17 @@ class afs (
     default        => $init_template
   }
 
-  $packages_real = $packages ? {
-    'USE_DEFAULTS' => $packages_default,
-    default        => $packages
+  $package_adminfile_real = $package_adminfile
+
+  $package_name_real = $package_name ? {
+    'USE_DEFAULTS' => $package_name_default,
+    default        => $package_name
   }
+
+  $package_source_real = $package_source
+
+  $service_provider_real = $service_provider
+
   # </assign variables>
 
 
@@ -238,15 +248,30 @@ class afs (
 
   validate_string($init_template_real)
 
-  validate_array($packages_real)
+
+  if $afs_cron_job_content_real != undef {
+    validate_string($afs_cron_job_content_real)
+  }
+
+  validate_array($package_name_real)
+
+  if $package_source_real != undef {
+    validate_string($package_source_real)
+  }
+
+  if $service_provider_real != undef {
+    validate_string($service_provider_real)
+  }
 
   # </validating variables>
 
 
   # <Install & Config>
-  package { 'OpenAFS_packages':
-    ensure => installed,
-    name   => $packages_real,
+  package { 'afs_packages':
+    ensure    => installed,
+    name      => $package_name_real,
+    adminfile => $package_adminfile_real,
+    source    => $package_source_real,
   }
 
   common::mkdir_p { $afs_config_path_real: }
@@ -258,7 +283,7 @@ class afs (
     group   => 'root',
     mode    => '0755',
     source  => "puppet:///modules/afs/${init_template_real}",
-    require => Package['OpenAFS_packages'],
+    require => Package['afs_packages'],
   }
 
   file  { 'afs_config_cacheinfo' :
@@ -278,7 +303,7 @@ class afs (
     group   => 'root',
     mode    => '0644',
     content => template('afs/openafs-client.erb'),
-    require => Package['OpenAFS_packages'],
+    require => Package['afs_packages'],
   }
 
   if $afs_suidcells_real != undef {
@@ -328,7 +353,7 @@ class afs (
         month    => $afs_cron_job_month_real,
         weekday  => $afs_cron_job_weekday_real,
         monthday => $afs_cron_job_monthday_real,
-        require  => Package['OpenAFS_packages'],
+        require  => Package['afs_packages'],
       }
     }
     else {
@@ -339,7 +364,7 @@ class afs (
         group   => 'root',
         mode    => '0755',
         content => $afs_cron_job_content_real,
-        require => Package['OpenAFS_packages'],
+        require => Package['afs_packages'],
       }
     }
   }
@@ -350,10 +375,12 @@ class afs (
     ensure     => 'running',
     enable     => true,
     name       => 'openafs-client',
-    hasstatus  => true,
+    hasstatus  => false,
     hasrestart => false,
+    provider   => $service_provider_real,
     restart    => '/bin/true',
-    require    => Package['OpenAFS_packages'],
+    require    => Package['afs_packages'],
+    status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
   }
 
   # <Install & Config>
