@@ -12,6 +12,7 @@ The module installs and configures OpenAFS.
 This module provides OS default values for these OSfamilies:
 
  * RedHat
+ * Solaris
  * Suse
 
 For other OSfamilies support, please specify all parameters which defaults to 'USE_DEFAULTS'.
@@ -134,7 +135,7 @@ config_client_args
 ------------------
 AFSD_ARGS / parameters to be passed to AFS daemon while starting.
 Since 1.6.x the afs-client has integrated auto-tuning. So specifying more options for tuning should only be applied after monitoring the system.
-candidates for tuning: -stat, -volumes
+Candidates for tuning: -stat, -volumes
 
 - *Default*: '-dynroot -afsdb -daemons 6 -volumes 1000'
 
@@ -201,8 +202,50 @@ afs::symlinks:
 </pre>
 
 
-packages
---------
-Array of needed OpenAFS packages
+package_adminfile
+-----------------
+Solaris specific: string with adminfile.
+
+- *Default*: undef
+
+
+package_name
+------------
+Array of needed OpenAFS packages.
 
 - *Default*: 'USE_DEFAULTS', based on OS platform
+
+
+package_source
+--------------
+Solaris specific: string with package source.
+
+- *Default*: undef
+
+
+service_provider
+----------------
+Solaris specific (mostly): string with provider for service.
+Should be undef for Linux and 'init' for Solaris.
+
+- *Default*: undef
+
+
+# Solaris specific #
+For usage on Solaris, you will need to define these variables:
+
+$package_adminfile, $package_source and $service_provider
+
+If you want to create a cron job, please set $afs_cron_job_interval to 'specific' and choose your values for $afs_cron_job_hour and $afs_cron_job_minute.
+
+Hiera example:
+<pre>
+afs::afs_cron_job_interval: 'specific'
+afs::afs_cron_job_content:  '[ -x /afs_maintenance.sh ] && /afs_maintenance.sh'
+afs::afs_cron_job_hour:     '2'
+afs::afs_cron_job_minute:   '42'
+
+afs::package_adminfile:     '/path/to/adminfile/noask'
+afs::package_source:        '/path/to/package/openafs-x.x.x-x-Sol10'
+afs::service_provider:      'init'
+</pre>
