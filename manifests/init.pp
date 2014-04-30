@@ -253,6 +253,8 @@ class afs (
     validate_string($afs_cron_job_content_real)
   }
 
+  validate_string($package_adminfile_real)
+
   validate_array($package_name_real)
 
   if $package_source_real != undef {
