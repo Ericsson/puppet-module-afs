@@ -1,5 +1,7 @@
 #! /bin/sh
+#
 # Copyright (c) 2014 AFS-Core Ericsson
+# Version v1.2, 2014-04-28
 #
 # System startup script for OpenAFS
 #
@@ -23,6 +25,8 @@ DAEMON_BIN=/usr/sbin/afsd
 AFS_KERNEL_MODULE=libafs
 AFS=/afs
 SUIDCELLS=/etc/openafs/SuidCells
+SETSERVERPREFS=/afs/sunrise.ericsson.se/afsadm/sbin/afs_setserverprefs.sh
+HEALTHCHECK=/afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh
 
 #test -x $DAEMON_BIN || exit 5
 
@@ -40,12 +44,12 @@ SUIDCELLS=/etc/openafs/SuidCells
 [ -f /etc/sysconfig/openafs-client ] && . /etc/sysconfig/openafs-client
 
 # Set the minimum required options for afsd if no options set in /etc/sysconfig/openafs-client
-AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb"}
+AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb -nosettime"}
 UPDATE=${UPDATE:-"false"}
 
-suid() {
+setsuid() {
   if [ -f $SUIDCELLS ]; then
-    for CELLS in `cat $SUIDCELLS | grep -v ^#`; do
+    for CELLS in `grep '^[^#]' $SUIDCELLS`; do
       echo "Setting $CELLS suid"
       /usr/bin/fs setcell -cell $CELLS -suid
     done
@@ -169,7 +173,9 @@ case "$1" in
 				ps ax | grep -q '\[afsd\]' || $DAEMON_BIN $AFSD_ARGS
 				RETVAL=$?
 				if [ $RETVAL -eq 0 ] ; then
-					suid
+					setsuid
+					# background job that should run after the AFS initialization...
+					(sleep 60; [ -x $SETSERVERPREFS ] && $SETSERVERPREFS) </dev/null >/dev/null 2>&1 &
 				else
 					rc_failed 1
 				fi
@@ -259,10 +265,10 @@ case "$1" in
 	check)
 		echo -n "Checking $DAEMON "
 		if ps ax | grep -q '\[afsd\]'; then
-			if [ -f /afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh ]; then
-				/afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh
+			if [ -x $HEALTHCHECK ]; then
+				$HEALTHCHECK
 			else
-				echo -n $"Check-script not available: /afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh"
+				echo -n $"Check-script not available: $HEALTHCHECK"
 				echo
 	      RETVAL=1
 			fi

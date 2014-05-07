@@ -1,5 +1,7 @@
 #!/bin/bash
+#
 # Copyright (c) 2014 AFS-Core Ericsson
+# Version v1.2, 2014-04-28
 #
 # openafs-client	Start/Stop the OpenAFS Client
 #
@@ -14,20 +16,20 @@ AFS_KERNEL_MODULE=openafs
 AFS=/afs
 OPENAFSDKMS=dkms-openafs
 SUIDCELLS=/usr/vice/etc/SuidCells
+SETSERVERPREFS=/afs/sunrise.ericsson.se/afsadm/sbin/afs_setserverprefs.sh
+HEALTHCHECK=/afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh
 
 [ -f /etc/init.d/functions ] && . /etc/init.d/functions
 [ -f /etc/sysconfig/openafs-client ] && . /etc/sysconfig/openafs-client
 
 # Set the minimum required options for afsd if no options set in /etc/sysconfig/openafs-client
-AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb"}
+AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb -nosettime"}
 UPDATE=${UPDATE:-"false"}
 DKMS=${DKMS:-"true"}
 
-
-
-suid() {
+setsuid() {
   if [ -f $SUIDCELLS ]; then
-    for CELLS in `cat $SUIDCELLS | grep -v ^#`; do
+    for CELLS in `grep '^[^#]' $SUIDCELLS`; do
       echo "Setting $CELLS suid"
       /usr/bin/fs setcell -cell $CELLS -suid
     done
@@ -173,7 +175,9 @@ start() {
 		[ $RETVAL -eq 0 ] && touch /var/lock/subsys/openafs-client
 		[ $RETVAL -eq 0 ] && [ "$AFS_POST_INIT" ] && $AFS_POST_INIT
 		if [ $RETVAL -eq 0 ]; then
-			suid
+			setsuid
+      # background job that should run after the AFS initialization...
+			(sleep 60; [ -x $SETSERVERPREFS ] && $SETSERVERPREFS) </dev/null >/dev/null 2>&1 &
 		fi
 		return $RETVAL
 	else
@@ -245,10 +249,10 @@ check() {
 		echo
 		return 1
 	fi
-	if [ -f /afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh ]; then
-	  /afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh
+	if [ -x $HEALTHCHECK ]; then
+	  $HEALTHCHECK
 	else
-		echo -n $"Check-script not available: /afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh"
+		echo -n $"Check-script not available: $HEALTHCHECK"
 		failure $"Check-script not available"
 		echo
 		return 1

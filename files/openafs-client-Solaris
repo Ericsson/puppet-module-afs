@@ -1,9 +1,10 @@
 #!/bin/sh
 #
 # Copyright (c) 2014 AFS-Core Ericsson
-# Version v1.0, 2014-03-14 by eralbru
+# Version v1.2, 2014-04-28
 #
 # openafs-client  Start/Stop the OpenAFS Client
+# rc script for AFS on Solaris 8/9/10/11 or OpenSolaris-based platforms
 #
 #
 
@@ -13,28 +14,50 @@ CONFIG=/usr/vice/etc/sysconfig
 AFSDOPT=$CONFIG/openafs-client
 AFS=/afs
 SUIDCELLS=/usr/vice/etc/SuidCells
+DRVFS=""
+TRUE=0
+FALSE=1
+SETSERVERPREFS=/afs/sunrise.ericsson.se/afsadm/sbin/afs_setserverprefs.sh
+HEALTHCHECK=/afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh
 
 [ -f $AFSDOPT ] && . $AFSDOPT
 
 # Set the minimum required options for afsd if no options set in $AFSDOPT
-AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb"}
+AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb -nosettime"}
 
-suid() {
+# Need the commands pgrep, awk, fs
+PATH=/sbin:/bin:/usr/bin:/usr/sbin:/usr/proc/bin:/usr/afsws/bin:/usr/afsws/etc:/usr/afs/bin:/usr/afs/etc:/opt/afssw/bin:/opt/afssw/etc:/usr/afsw/bin:/usr/afsw/sbin:/usr/afsw/etc:/usr/vice/bin:/usr/vice/etc:"$PATH"
+export PATH
+
+setsuid() {
   if [ -f $SUIDCELLS ]; then
-    for CELLS in `cat $SUIDCELLS | grep -v '^#'`; do
+    for CELLS in `grep '^[^#]' $SUIDCELLS`; do
       echo "Setting $CELLS suid"
-      /usr/afs/bin/fs setcell -cell $CELLS -suid
+      fs setcell -cell $CELLS -suid
     done
   fi
 }
 
-# Need the commands ps, awk, kill, sleep
-PATH=${PATH}${PATH:+:}/sbin:/bin:/usr/bin
+setsysname() {
+  echo "Setting additional sysname for Sol11"
+	fs sysname -newsys sun4x_511 sun4x_510
+}
 
-killproc() {            # kill the named process(es)
-      awkfield2='$2'
-        pid=`ps -ef | awk "/$1/ && ! /awk/ {print $awkfield2}"`
-        [ "$pid" != "" ] && kill -KILL $pid
+chkafsd() {
+	if pgrep -u 0 -x afsd >/dev/null; then
+		return ${TRUE}
+	else
+		return ${FALSE}
+	fi
+}
+
+issol11() {
+	case `uname -r` in
+	  5.?|5.10) return ${FALSE};;
+	  5.??) return ${TRUE};;
+	esac
+	echo "unsupported OS"
+	exit 1
 }
 
 case $1 in
@@ -45,13 +68,17 @@ if uname -v | grep Virtual >/dev/null || { zonename; } 2>/dev/null | fgrep -vx g
   echo "Solaris Non-Global Zone: afsd will not start and is not needed !"
 	exit
 fi
-  
-#
-# Make sure afs exists in /etc/name_to_sysnum
-#
-if grep -s "afs" /etc/name_to_sysnum > /dev/null; then
-    echo "Entry for afs already exists in /etc/name_to_sysnum"
+
+if issol11; then
+  DRVFS=drv
 else
+  DRVFS=fs
+  #
+  # Make sure afs exists in /etc/name_to_sysnum
+  #
+  if grep -s "afs" /etc/name_to_sysnum > /dev/null; then
+    echo "Entry for afs already exists in /etc/name_to_sysnum"
+  else
     echo "Creating entry for afs in /etc/name_to_sysnum"
     cp /etc/name_to_sysnum /etc/name_to_sysnum.orig
     sed '/nfs/i\
@@ -59,6 +86,7 @@ afs			65' /etc/name_to_sysnum > /tmp/name_to_sysnum
     mv /tmp/name_to_sysnum /etc/name_to_sysnum
     echo "Reboot the system now for new /etc/name_to_sysnum to take effect"
     #reboot
+  fi
 fi
 
 ## Check to see that /bin/isalist exists and is executable
@@ -73,13 +101,13 @@ fi
 case `/bin/isalist` in
     *amd64* )
               nfssrv=/kernel/misc/amd64/nfssrv
-              afs=/kernel/fs/amd64/afs ;;
+              afs=/kernel/$DRVFS/amd64/afs ;;
     *sparcv9* )
               nfssrv=/kernel/misc/sparcv9/nfssrv
-              afs=/kernel/fs/sparcv9/afs ;;
+              afs=/kernel/$DRVFS/sparcv9/afs ;;
           * )
               nfssrv=/kernel/misc/nfssrv
-              afs=/kernel/fs/afs ;;
+              afs=/kernel/$DRVFS/afs ;;
 esac
 
 
@@ -101,7 +129,35 @@ fi
 
 if [ -f $afs ]; then
       echo "Loading AFS kernel extensions"
-      modload $afs
+			if issol11; then
+			  if [ -f /kernel/drv/afs.conf ] ; then
+				  echo "Kernel afs.conf already exists"
+				else
+				  echo "Creating kernel afs.conf"
+					echo 'name="afs" parent="pseudo";' > /kernel/drv/afs.conf
+				fi
+				# load the module
+				if grep '^afs ' /etc/name_to_major >/dev/null ; then
+				  echo "Loading AFS kernel extensions"
+					modload $afs
+					# this can sometimes be necessary to get the /devices afs device to attach
+					update_drv afs
+				else
+				  echo "Installing AFS driver and loading kernel extensions"
+					add_drv -m '* 0666 root root' afs
+				fi
+
+				# Create the /dev/afs link
+				if grep name=afs /etc/devlink.tab >/dev/null ; then
+				  echo "Entry for afs already exists in /etc/devlink.tab"
+				else
+				  echo "Adding entry for afs in /etc/devlink.tab"
+				  print "type=ddi_pseudo;name=afs;addr=0;minor=afs\t\D" >> /etc/devlink.tab
+				  devfsadm
+			  fi
+			else
+        modload $afs
+			fi
 else
       echo "$afs does not exist. Skipping AFS startup."
       exit 1
@@ -134,13 +190,18 @@ do
 done
 
 echo "Starting $DAEMON "
-if ps -ef | grep [/]usr/vice/etc/afsd >/dev/null; then
+if chkafsd; then
   echo " -> already running"
 else
   $DAEMON_BIN $AFSD_ARGS
   RETVAL=$?
   if [ $RETVAL -eq 0 ]; then
-    suid
+    setsuid
+    if issol11; then
+		  setsysname
+    fi
+    # background job that should run after the AFS initialization...
+    (sleep 60; [ -x $SETSERVERPREFS ] && $SETSERVERPREFS) </dev/null >/dev/null 2>&1 &
   fi
 fi
 
@@ -154,12 +215,12 @@ fi
 #
 
 echo "Stopping openafs-client: "
-if ps -ef | grep [/]usr/vice/etc/afsd > /dev/null; then
+if chkafsd; then
   umount $AFS
   RETVAL=$?
   echo
   if [ $RETVAL -eq 0 ] ; then
-    MODID=`modinfo -c | awk '/afs/ {print $1}'`
+    MODID=`modinfo -c | awk '/ afs / {print $1}'`
     modunload -i $MODID
     RETVAL=$?
     if [ $RETVAL -eq 0 ] ; then
@@ -178,25 +239,17 @@ echo ;;
 # Check the running AFS client
 #
 
-echo "Checking openafs-client: "
-if uname -v | grep Virtual >/dev/null || { zonename; } 2>/dev/null | fgrep -vx global >/dev/null; then
-	if [ -f /afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh ]; then
-		/afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh
-	else
-		echo "Check-script not available: /afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh"
-	fi
-else
-  if ps -ef | grep [/]usr/vice/etc/afsd > /dev/null; then
-  	if [ -f /afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh ]; then
-  		/afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh
+  echo "Checking openafs-client: "
+  if chkafsd; then
+  	if [ -f $HEALTHCHECK ]; then
+  		$HEALTHCHECK
   	else
-  		echo "Check-script not available: /afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh"
+  		echo "Check-script not available: $HEALTHCHECK"
   	fi
   else
   	echo "Cannot check openafs-client: not running"
   fi
-fi
-	echo ;;
+  echo ;;
 
 *)    echo "Usage: $0 {start|stop|check}"
       exit 1;;
