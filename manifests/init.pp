@@ -298,6 +298,10 @@ class afs (
     require => Common::Mkdir_p[$afs_config_path_real],
   }
 
+  $config_client_dir_real = dirname($config_client_path_real)
+
+  common::mkdir_p { $config_client_dir_real: }
+
   file  { 'afs_config_client' :
     ensure  => file,
     path    => $config_client_path_real,
@@ -305,7 +309,7 @@ class afs (
     group   => 'root',
     mode    => '0644',
     content => template('afs/openafs-client.erb'),
-    require => Package['afs_packages'],
+    require => [ Package['afs_packages'], Common::Mkdir_p[$config_client_dir_real], ],
   }
 
   if $afs_suidcells_real != undef {
