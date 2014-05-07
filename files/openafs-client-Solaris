@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (c) 2014 AFS-Core Ericsson
-# Version v1.2, 2014-04-28
+# Version v1.3, 2014-05-07
 #
 # openafs-client  Start/Stop the OpenAFS Client
 # rc script for AFS on Solaris 8/9/10/11 or OpenSolaris-based platforms
@@ -40,7 +40,9 @@ setsuid() {
 
 setsysname() {
   echo "Setting additional sysname for Sol11"
-	fs sysname -newsys sun4x_511 sun4x_510
+	CURRENTSYS=`fs sysname | sed -e "s/.*'\(.*\)'$/\1/"`
+	SECONDSYS=`echo $CURRENTSYS | sed -e 's/_511$/_510/'`
+	fs sysname -newsys $CURRENTSYS -newsys $SECONDSYS
 }
 
 chkafsd() {
