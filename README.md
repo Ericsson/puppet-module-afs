@@ -137,7 +137,7 @@ AFSD_ARGS / parameters to be passed to AFS daemon while starting.
 Since 1.6.x the afs-client has integrated auto-tuning. So specifying more options for tuning should only be applied after monitoring the system.
 Candidates for tuning: -stat, -volumes
 
-- *Default*: '-dynroot -afsdb -daemons 6 -volumes 1000'
+- *Default*: '-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime'
 
 
 config_client_dkms

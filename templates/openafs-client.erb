@@ -9,6 +9,7 @@
 # Since 1.6.x the afs-client has integrated auto-tuning.
 # So specifying more options for tuning should only be applied after monitoring the system.
 # candidates for tuning: -stat , -volumes
+# -nosettime option is only needed for older 1.4.x clients. It's the default on 1.6.x clients but can be set to have a equal configuration.
 
 #
 # Disk-cache options
@@ -19,7 +20,7 @@
 # If the cache-directory (RHEL + Solaris) /usr/vice/cache or (SLE) /var/cache/openafs is on a separate partition,
 # the cache-size should not be bigger than 95% of the partition-size. The client will not start if cache-size is bigger!
 # Default value is 1GB, size should be monitored and then be adjusted. On Terminal-servers 3-4GB is a good starting point.
-# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000"
+# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime"
 AFSD_ARGS="<%= @config_client_args_real %>"
 
 #
@@ -27,7 +28,7 @@ AFSD_ARGS="<%= @config_client_args_real %>"
 # Don't use more than 1GB for memory-cache!
 # Configured memory for memcache is completely reserved for AFS, cannot be used by something else, even if the afs-client doesn't use it!
 # Example for 1GB memcache ( by specifying -blocks to afsd the configuration in cacheinfo will be ignored ):
-# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -memcache -blocks 1000000 -chunksize 17"
+# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -memcache -blocks 1000000 -chunksize 17 -nosettime"
 
 #
 # This section is to enable a update_package feature in the startup-script via zypper (SLE) or yum (RHEL).

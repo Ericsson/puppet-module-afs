@@ -16,7 +16,7 @@ class afs (
   $afs_suidcells         = undef,
   $cache_path            = 'USE_DEFAULTS',
   $cache_size            = '1000000',
-  $config_client_args    = '-dynroot -afsdb -daemons 6 -volumes 1000',
+  $config_client_args    = '-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime',
   $config_client_dkms    = 'USE_DEFAULTS',
   $config_client_path    = 'USE_DEFAULTS',
   $config_client_update  = false,
