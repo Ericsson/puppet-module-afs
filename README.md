@@ -192,13 +192,16 @@ Hash of path and target to create symlinks from if $create_links is true.
 
 Hiera example:
 <pre>
-afs::symlinks:
+afs::links:
   'app':
     path:   '/app'
     target: '/afs/some/path/app'
   'env':
     path:   '/env'
     target: '/afs/some/path/env'
+  'etc_home':
+     path:   '/etc/home'
+     target: '/env/site/profiles/home'
 </pre>
 
 
