@@ -78,7 +78,7 @@ class afs (
     ($init_template == 'USE_DEFAULTS') or
     ($package_name == 'USE_DEFAULTS')
   ) and $os_defaults_missing == true {
-      fail("Sorry, I don't know default values for $::osfamily yet :( Please provide specific values to the afs module.")
+      fail("Sorry, I don't know default values for ${::osfamily} yet :( Please provide specific values to the afs module.")
   }
   # </USE_DEFAULT vs OS defaults>
 
@@ -172,6 +172,10 @@ class afs (
 
   $service_provider_real = $service_provider
 
+  if ($::osfamily == 'Solaris') and ($::is_virtual == 'true') {
+    $solaris_virtual_real = true
+  }
+
   # </assign variables>
 
 
@@ -255,6 +259,10 @@ class afs (
     validate_string($service_provider_real)
   }
 
+  if $solaris_virtual_real != undef {
+    validate_bool($solaris_virtual_real)
+  }
+
   # </validating variables>
 
 
@@ -309,7 +317,7 @@ class afs (
       owner   => 'root',
       group   => 'root',
       mode    => '0644',
-      content => "$afs_suidcells_real\n",
+      content => "${afs_suidcells_real}\n",
       require => Common::Mkdir_p[$afs_config_path_real],
     }
   }
@@ -321,7 +329,7 @@ class afs (
       owner   => 'root',
       group   => 'root',
       mode    => '0644',
-      content => "$afs_cell_real\n",
+      content => "${afs_cell_real}\n",
       require => Common::Mkdir_p[$afs_config_path_real],
     }
   }
@@ -333,52 +341,57 @@ class afs (
       owner   => 'root',
       group   => 'root',
       mode    => '0644',
-      content => "$afs_cellserverdb_real\n",
+      content => "${afs_cellserverdb_real}\n",
       require => Common::Mkdir_p[$afs_config_path_real],
     }
   }
 
-  if ($afs_cron_job_content_real != undef) and ($afs_cron_job_interval_real != undef) {
-    if $afs_cron_job_interval_real == 'specific' {
-      cron { 'afs_cron_job':
-        ensure   => present,
-        command  => $afs_cron_job_content_real,
-        user     => 'root',
-        minute   => $afs_cron_job_minute_real,
-        hour     => $afs_cron_job_hour_real,
-        month    => $afs_cron_job_month_real,
-        weekday  => $afs_cron_job_weekday_real,
-        monthday => $afs_cron_job_monthday_real,
-        require  => Package['afs_packages'],
+  # Solaris containers must not start the setserverprefs cronjob.
+  if $solaris_virtual_real != true {
+    if ($afs_cron_job_content_real != undef) and ($afs_cron_job_interval_real != undef) {
+      if $afs_cron_job_interval_real == 'specific' {
+        cron { 'afs_cron_job':
+          ensure   => present,
+          command  => $afs_cron_job_content_real,
+          user     => 'root',
+          minute   => $afs_cron_job_minute_real,
+          hour     => $afs_cron_job_hour_real,
+          month    => $afs_cron_job_month_real,
+          weekday  => $afs_cron_job_weekday_real,
+          monthday => $afs_cron_job_monthday_real,
+          require  => Package['afs_packages'],
+        }
       }
-    }
-    else {
-      file  { 'afs_cron_job' :
-        ensure  => file,
-        path    => "/etc/cron.${afs_cron_job_interval_real}/afs_cron_job",
-        owner   => 'root',
-        group   => 'root',
-        mode    => '0755',
-        content => $afs_cron_job_content_real,
-        require => Package['afs_packages'],
+      else {
+        file  { 'afs_cron_job' :
+          ensure  => file,
+          path    => "/etc/cron.${afs_cron_job_interval_real}/afs_cron_job",
+          owner   => 'root',
+          group   => 'root',
+          mode    => '0755',
+          content => $afs_cron_job_content_real,
+          require => Package['afs_packages'],
+        }
       }
     }
   }
 
   # THIS SERVICE SHOULD NOT BE RESTARTED
   # Restarting it may cause AFS module and kernel problems.
-  service { 'afs_openafs_client_service':
-    ensure     => 'running',
-    enable     => true,
-    name       => 'openafs-client',
-    hasstatus  => false,
-    hasrestart => false,
-    provider   => $service_provider_real,
-    restart    => '/bin/true',
-    require    => Package['afs_packages'],
-    status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
+  # Solaris containers must not start the service.
+  if $solaris_virtual_real != true {
+    service { 'afs_openafs_client_service':
+      ensure     => 'running',
+      enable     => true,
+      name       => 'openafs-client',
+      hasstatus  => false,
+      hasrestart => false,
+      provider   => $service_provider_real,
+      restart    => '/bin/true',
+      require    => Package['afs_packages'],
+      status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
+    }
   }
-
   # <Install & Config>
 
 
