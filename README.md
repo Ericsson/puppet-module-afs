@@ -252,3 +252,5 @@ afs::package_adminfile:     '/path/to/adminfile/noask'
 afs::package_source:        '/path/to/package/openafs-x.x.x-x-Sol10'
 afs::service_provider:      'init'
 </pre>
+
+On Solaris containers, this module will not start the OpenAFS service and the cronjob will not be created. Packages are still installed for the included tools.
