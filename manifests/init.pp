@@ -26,6 +26,7 @@ class afs (
   $links                 = undef,
   $package_adminfile     = undef,
   $package_name          = 'USE_DEFAULTS',
+  $package_provider      = undef,
   $package_source        = undef,
   $service_provider      = undef,
 ) {
@@ -170,6 +171,8 @@ class afs (
 
   $package_source_real = $package_source
 
+  $package_provider_real = $package_provider
+
   $service_provider_real = $service_provider
 
   if ($::osfamily == 'Solaris') and ($::is_virtual == 'true') and ($::virtual == 'zone') {
@@ -255,6 +258,10 @@ class afs (
     validate_string($package_source_real)
   }
 
+  if $package_provider_real != undef {
+    validate_string($package_provider_real)
+  }
+
   if $service_provider_real != undef {
     validate_string($service_provider_real)
   }
@@ -267,11 +274,28 @@ class afs (
 
 
   # <Install & Config>
+
+  if $package_adminfile_real != undef {
+    Package {
+      adminfile => $package_adminfile_real,
+    }
+  }
+
+  if $package_provider_real != undef {
+    Package {
+      provider => $package_provider_real,
+    }
+  }
+
+  if $package_source_real != undef {
+    Package {
+      source => $package_source_real,
+    }
+  }
+
   package { 'afs_packages':
-    ensure    => installed,
-    name      => $package_name_real,
-    adminfile => $package_adminfile_real,
-    source    => $package_source_real,
+    ensure => installed,
+    name   => $package_name_real,
   }
 
   common::mkdir_p { $afs_config_path_real: }
@@ -376,6 +400,12 @@ class afs (
     }
   }
 
+  if $service_provider_real != undef {
+    Service {
+      provider => $service_provider_real,
+    }
+  }
+
   # THIS SERVICE SHOULD NOT BE RESTARTED
   # Restarting it may cause AFS module and kernel problems.
   # Solaris containers must not start the service.
@@ -386,7 +416,6 @@ class afs (
       name       => 'openafs-client',
       hasstatus  => false,
       hasrestart => false,
-      provider   => $service_provider_real,
       restart    => '/bin/true',
       require    => Package['afs_packages'],
       status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
