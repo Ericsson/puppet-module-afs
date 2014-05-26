@@ -219,6 +219,13 @@ Array of needed OpenAFS packages.
 - *Default*: 'USE_DEFAULTS', based on OS platform
 
 
+package_provider
+----------------
+Solaris specific: string with package source.
+
+- *Default*: undef
+
+
 package_source
 --------------
 Solaris specific: string with package source.
