@@ -300,7 +300,7 @@ class afs (
 
   common::mkdir_p { $afs_config_path_real: }
 
-  file  { 'afs_init_script' :
+  file { 'afs_init_script' :
     ensure  => file,
     path    => $init_script_real,
     owner   => 'root',
@@ -310,7 +310,7 @@ class afs (
     require => Package['afs_packages'],
   }
 
-  file  { 'afs_config_cacheinfo' :
+  file { 'afs_config_cacheinfo' :
     ensure  => file,
     path    => "${afs_config_path_real}/cacheinfo",
     owner   => 'root',
@@ -324,7 +324,7 @@ class afs (
 
   common::mkdir_p { $config_client_dir_real: }
 
-  file  { 'afs_config_client' :
+  file { 'afs_config_client' :
     ensure  => file,
     path    => $config_client_path_real,
     owner   => 'root',
@@ -335,7 +335,7 @@ class afs (
   }
 
   if $afs_suidcells_real != undef {
-    file  { 'afs_config_suidcells' :
+    file { 'afs_config_suidcells' :
       ensure  => file,
       path    => "${afs_config_path_real}/SuidCells",
       owner   => 'root',
@@ -347,7 +347,7 @@ class afs (
   }
 
   if $afs_cell_real != undef {
-    file  { 'afs_config_thiscell' :
+    file { 'afs_config_thiscell' :
       ensure  => file,
       path    => "${afs_config_path_real}/ThisCell",
       owner   => 'root',
@@ -359,7 +359,7 @@ class afs (
   }
 
   if $afs_cellserverdb_real != undef {
-    file  { 'afs_config_cellserverdb' :
+    file { 'afs_config_cellserverdb' :
       ensure  => file,
       path    => "${afs_config_path_real}/CellServDB",
       owner   => 'root',
@@ -387,7 +387,7 @@ class afs (
         }
       }
       else {
-        file  { 'afs_cron_job' :
+        file { 'afs_cron_job' :
           ensure  => file,
           path    => "/etc/cron.${afs_cron_job_interval_real}/afs_cron_job",
           owner   => 'root',
