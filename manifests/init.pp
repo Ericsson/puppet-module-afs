@@ -293,9 +293,9 @@ class afs (
     }
   }
 
-  package { 'afs_packages':
+  package { $package_name_real:
     ensure => installed,
-    name   => $package_name_real,
+    alias  => 'afs_packages',
   }
 
   common::mkdir_p { $afs_config_path_real: }

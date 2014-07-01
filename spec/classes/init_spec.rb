@@ -46,14 +46,14 @@ describe 'afs' do
 # TODO: This will break when multiple packages are used (RedHat & Suse):
 #        it { should compile.with_all_deps }
 
-
-        # package { 'afs_packages': }
-        it {
-          should contain_package('afs_packages').with({
-            'ensure' => 'installed',
-            'name'   => v[:package_name_default],
-          })
-        }
+        v[:package_name_default].each do |package|
+          it {
+            should contain_package(package).with({
+              'ensure' => 'installed',
+              'alias'  => 'afs_packages',
+            })
+          }
+        end
 
         # common::mkdir_p { $afs_config_path_real: }
         it {
@@ -209,31 +209,29 @@ describe 'afs' do
         :package_provider  => 'sun',
         :package_source    => '/sw/Solaris/Sparc/EISopenafs',
         :service_provider  => 'init',
+        :package_name      => ['EISopenafs'],
       }
     end
 
     context "where adminfile is </sw/Solaris/Sparc/noask>" do
-      # package { 'afs_packages':}
       it {
-        should contain_package('afs_packages').with({
+        should contain_package('EISopenafs').with({
           'adminfile' => '/sw/Solaris/Sparc/noask',
         })
       }
     end
 
     context "where package_provider is <sun>" do
-      # package { 'afs_packages':}
       it {
-        should contain_package('afs_packages').with({
+        should contain_package('EISopenafs').with({
           'provider'  => 'sun',
         })
       }
     end
 
     context "where source is </sw/Solaris/Sparc/EISopenafs>" do
-      # package { 'afs_packages':}
       it {
-        should contain_package('afs_packages').with({
+        should contain_package('EISopenafs').with({
           'source'    => '/sw/Solaris/Sparc/EISopenafs'
         })
       }
