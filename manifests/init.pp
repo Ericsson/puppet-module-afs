@@ -295,7 +295,6 @@ class afs (
 
   package { $package_name_real:
     ensure => installed,
-    alias  => 'afs_packages',
   }
 
   common::mkdir_p { $afs_config_path_real: }
@@ -307,7 +306,7 @@ class afs (
     group   => 'root',
     mode    => '0755',
     source  => "puppet:///modules/afs/${init_template_real}",
-    require => Package['afs_packages'],
+    require => Package[$package_name_real],
   }
 
   file { 'afs_config_cacheinfo' :
@@ -331,7 +330,7 @@ class afs (
     group   => 'root',
     mode    => '0644',
     content => template('afs/openafs-client.erb'),
-    require => [ Package['afs_packages'], Common::Mkdir_p[$config_client_dir_real], ],
+    require => [ Package[$package_name_real], Common::Mkdir_p[$config_client_dir_real], ],
   }
 
   if $afs_suidcells_real != undef {
@@ -383,7 +382,7 @@ class afs (
           month    => $afs_cron_job_month_real,
           weekday  => $afs_cron_job_weekday_real,
           monthday => $afs_cron_job_monthday_real,
-          require  => Package['afs_packages'],
+          require  => Package[$package_name_real],
         }
       }
       else {
@@ -394,7 +393,7 @@ class afs (
           group   => 'root',
           mode    => '0755',
           content => $afs_cron_job_content_real,
-          require => Package['afs_packages'],
+          require => Package[$package_name_real],
         }
       }
     }
@@ -417,7 +416,7 @@ class afs (
       hasstatus  => false,
       hasrestart => false,
       restart    => '/bin/true',
-      require    => Package['afs_packages'],
+      require    => Package[$package_name_real],
       status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
     }
   }
