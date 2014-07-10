@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Copyright (c) 2014 AFS-Core Ericsson
-# Version v1.2, 2014-04-28
+# Version v1.4, 2014-07-09
 #
 # openafs-client	Start/Stop the OpenAFS Client
 #
@@ -12,8 +12,9 @@
 # $Revision$
 
 DAEMON_BIN=/usr/vice/etc/afsd
-AFS_KERNEL_MODULE=openafs
+AFS_KERNEL_MODULE=libafs
 AFS=/afs
+OPENAFS_VERSION=`rpm --queryformat '%{version}' -q openafs`
 OPENAFSDKMS=dkms-openafs
 SUIDCELLS=/usr/vice/etc/SuidCells
 SETSERVERPREFS=/afs/sunrise.ericsson.se/afsadm/sbin/afs_setserverprefs.sh
@@ -46,16 +47,37 @@ killafs() {
 }
 
 dkms_check() {
-	rpm -q $OPENAFSDKMS >/dev/null 2>&1
-	RETVAL=$?
-	return $RETVAL
+	if [ "$DKMS" == "true" ]; then
+	  rpm -q $OPENAFSDKMS >/dev/null 2>&1
+	  RETVAL=$?
+	  if [ $RETVAL -ne 0 ]; then
+	    echo -n $"Error: DKMS set to true but no package $OPENAFSDKMS installed"
+	    failure $"Error: DKMS set to true but no package $OPENAFSDKMS installed"
+	    echo
+	    exit 1
+	  fi
+  	  AFS_KERNEL_MODULE=openafs
+	  return $RETVAL
+	else
+	  return 1
+	fi
 }
 
 check_kernelmodule() {
-	# Only needed if dkms is not used
-	if dkms_check ; then
-		return 0
-	fi
+  if dkms_check ; then
+    dkms status -m $AFS_KERNEL_MODULE -k `uname -r` | grep -w 'installed-weak' > /dev/null
+    if [ $? -eq 0 ]; then
+      echo
+      echo "Weak module detected, will be removed.."	
+      if [ -h /lib/modules/`uname -r`/weak-updates/${AFS_KERNEL_MODULE}.ko ]; then
+        rm -fv /lib/modules/`uname -r`/weak-updates/${AFS_KERNEL_MODULE}.ko
+      fi
+      echo
+      echo "DKMS stuff ..."
+      dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver `uname -r`
+    fi
+    return 0
+  fi
 
   /sbin/modprobe $AFS_KERNEL_MODULE > /dev/null 2>&1
   RETVAL=$?
@@ -71,10 +93,11 @@ check_kernelmodule() {
 
   echo "Build log for OpenAFS module: `date`" > $KMOD_BUILDLOG
 
-  if [ -d /usr/src/openafs-kernel-$OPENAFS_VERSION/src ]; then
+  if [ -d /usr/src/openafs-kernel-$OPENAFS_VERSION/src -a -f /usr/src/openafs-kernel-$OPENAFS_VERSION/src/configure ]; then
     cd /usr/src/openafs-kernel-$OPENAFS_VERSION/src
 
     make clean >> $KMOD_BUILDLOG 2>&1
+    
     ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >> $KMOD_BUILDLOG 2>&1
     make -j4 >> $KMOD_BUILDLOG 2>&1
 
@@ -94,12 +117,15 @@ check_kernelmodule() {
     [ $RETVAL -eq 0 ] && rm -f $KMOD_BUILDLOG && echo -n "Build succeded!" && success "Build succeded!" && echo && return 0
 
     echo -n "Failed to build kernel module."
-    failed "Failed to build kernel module."
+    failure "Failed to build kernel module."
     echo "See $KMOD_BUILDLOG for more details."
+    echo
+    return 1
   else
     echo -n "OpenAFS Kernel source not installed."
-    failed "OpenAFS Kernel source not installed."
+    failure "OpenAFS Kernel source not installed."
     echo
+    return 1
   fi
 }
 
@@ -110,7 +136,7 @@ rm_wrong_module() {
 	fi
 
   kernel=`uname -r`
-  module="/lib/modules/$kernel/kernel/fs/openafs/libafs.ko"
+  module="/lib/modules/$kernel/kernel/fs/openafs/${AFS_KERNEL_MODULE}.ko"
   if [ -f $module ] ; then
     mod_version=`strings $module | grep OpenAFS | awk '{print $3}'`
     pkg_version=`/usr/bin/fs --version | awk '{print $2}'`
@@ -183,11 +209,13 @@ start() {
 	else
 		echo -n $"failed to load openafs kernel module."
 		failure $"failed to load openafs kernel module."
+		echo
 		return 1
 	fi
 }
 
 stop() {
+
 	echo -n $"Stopping openafs-client: "
 	if [ ! -e /var/lock/subsys/openafs-client ] ; then
 		echo -n $"cannot stop openafs-client: not running"
@@ -195,10 +223,17 @@ stop() {
 		echo
 		return 1
 	fi
+	if dkms_check ; then
+	  AFS_KERNEL_MODULE=openafs
+	fi
 	umount $AFS
 	RETVAL=$?
 	echo
 	if [ $RETVAL -eq 0 ] ; then
+		lsmod | grep -w $AFS_KERNEL_MODULE > /dev/null
+		if [ $? -ne 0 ]; then
+		  AFS_KERNEL_MODULE=`lsmod | awk '/afs/ {print $1}'`
+		fi 
 		rmmod $AFS_KERNEL_MODULE
 		RETVAL=$?
 	fi
@@ -222,11 +257,18 @@ stop-force() {
 		killafs TERM
 		echo "Sending all processes using $AFS the KILL signal ..."
 		killafs KILL
-  fi
+  	fi
+	if dkms_check ; then
+	  AFS_KERNEL_MODULE=openafs
+	fi
 	umount $AFS
 	RETVAL=$?
 	echo
 	if [ $RETVAL -eq 0 ] ; then
+		lsmod | grep -w $AFS_KERNEL_MODULE > /dev/null
+		if [ $? -ne 0 ]; then
+		  AFS_KERNEL_MODULE=`lsmod | awk '/afs/ {print $1}'`
+		fi 
 		rmmod $AFS_KERNEL_MODULE
 		RETVAL=$?
 	fi
