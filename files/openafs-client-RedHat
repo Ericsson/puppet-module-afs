@@ -161,7 +161,7 @@ package_update() {
 			if [ "$DKMS" == "true" ]; then
 			  yum -q -y install openafs openafs-client openafs-docs openafs-krb5 openafs-compat dkms-openafs dkms
 			else
-				yum -q -y install openafs openafs-client openafs-docs openafs-krb5 openafs-compat openafs-kernel-source
+			  yum -q -y install openafs openafs-client openafs-docs openafs-krb5 openafs-compat openafs-kernel-source
 			fi
 			echo "Done"
 		fi
