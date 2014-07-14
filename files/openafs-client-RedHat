@@ -141,7 +141,10 @@ rm_wrong_module() {
     mod_version=`strings $module | grep OpenAFS | awk '{print $3}'`
     pkg_version=`/usr/bin/fs --version | awk '{print $2}'`
     if [ "$mod_version" != "$pkg_version" ] ; then
-      rm "/lib/modules/`uname -r`/kernel/fs/openafs/{openafs,libafs}.ko"
+      rm $module
+      if [ -f "/lib/modules/`uname -r`/kernel/fs/openafs/openafs.ko" ]; then
+        rm "/lib/modules/`uname -r`/kernel/fs/openafs/openafs.ko"
+      fi
       echo "Removed openafs.ko/libafs.ko, version mismatch"
     fi
   fi
@@ -158,7 +161,7 @@ package_update() {
 			if [ "$DKMS" == "true" ]; then
 			  yum -q -y install openafs openafs-client openafs-docs openafs-krb5 openafs-compat dkms-openafs dkms
 			else
-				yum -q -y install openafs openafs-client openafs-docs openafs-krb5 openafs-compat openafs-kernel-source
+			  yum -q -y install openafs openafs-client openafs-docs openafs-krb5 openafs-compat openafs-kernel-source
 			fi
 			echo "Done"
 		fi
