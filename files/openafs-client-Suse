@@ -1,0 +1,357 @@
+#! /bin/sh
+#
+# Copyright (c) 2014 AFS-Core Ericsson
+# Version v1.3, 2014-08-27
+#
+# System startup script for OpenAFS
+#
+### BEGIN INIT INFO
+# chkconfig: 2345 50 50
+# Provides:       afs-client
+# Required-Start: $local_fs $named $network $remote_fs
+# Should-Start:   $syslog
+# Should-Stop:    $null
+# Required-Stop:  $null
+# Default-Start:  3 5
+# Default-Stop:   0 2 1 6
+# Short-Description: Start OpenAFS Client
+# Description: Starts the OpenAFS Client by loading the required kernel-module and starting afsd.
+### END INIT INFO
+
+
+DAEMON="OpenAFS Client"
+SUPPORTS_HUP="no"
+DAEMON_BIN=/usr/sbin/afsd
+AFS_KERNEL_MODULE=libafs
+AFS=/afs
+SUIDCELLS=/etc/openafs/SuidCells
+SETSERVERPREFS=/afs/sunrise.ericsson.se/afsadm/sbin/afs_setserverprefs.sh
+HEALTHCHECK=/afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh
+
+#test -x $DAEMON_BIN || exit 5
+
+# Shell functions sourced from /etc/rc.status:
+#      rc_check         check and set local and overall rc status
+#      rc_status        check and set local and overall rc status
+#      rc_status -v     ditto but be verbose in local rc status
+#      rc_status -v -r  ditto and clear the local rc status
+#      rc_failed        set local and overall rc status to failed
+#      rc_failed <num>  set local and overall rc status to <num><num>
+#      rc_reset         clear local rc status (overall remains)
+#      rc_exit          exit appropriate to overall rc status
+. /etc/rc.status
+
+[ -f /etc/sysconfig/openafs-client ] && . /etc/sysconfig/openafs-client
+
+# Set the minimum required options for afsd if no options set in /etc/sysconfig/openafs-client
+AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb -nosettime"}
+UPDATE=${UPDATE:-"false"}
+
+setsuid() {
+  if [ -f $SUIDCELLS ]; then
+    for CELLS in `grep '^[^#]' $SUIDCELLS`; do
+      echo "Setting $CELLS suid"
+      /usr/bin/fs setcell -cell $CELLS -suid
+    done
+  fi
+}
+
+setsysname() {
+  _ARCH=`uname -i | sed 's/x86_64/amd64/'`
+  _DIST=""
+  
+  for d in novell SuSE fedora redhat centos ; do
+    if [ -f "/etc/$d-release" ] ; then
+      _DIST=$d
+      # What version of the distribution are we?
+      _VER=`/bin/rpm -qf --qf '%{version}\n' /etc/${_DIST}-release | sed 's/\([0-9]\+\)[a-zA-Z]\+\|\..*/\1/'`
+      break
+    elif [ -f "/etc/debian_version" ]; then
+      type lsb_release 1>/dev/null 2>/dev/null
+      if [ $? -eq 0 ]; then
+        DESCRIPTION=`lsb_release -d`
+        _DIST=`lsb_release -d | awk '/Description/ {print $2}'`
+        _VER=`lsb_release -d | awk '/Description/ {print $3}' | sed 's/\([0-9]\+\)\..*/\1/'`
+      fi
+      break
+    fi
+  done
+  case "$_DIST" in
+    novell|SuSE)
+      if grep -qi openSUSE /etc/${_DIST}-release ; then
+        _DIST="osuse"
+      else
+        _DIST="sle"
+      fi
+      ;;
+    redhat|centos)
+      _DIST="rhel"
+      ;;
+    fedora)
+      _DIST="fc"
+      ;;
+    Ubuntu)
+      _DIST="ubunt"
+      ;;
+    *)
+      _DIST=""
+      _ARCH=""
+      _VER=""
+      ;;
+  esac
+  
+  # Sysname list.  The order here is from specific to general, with a
+  # fallback to the compiled-in value from /usr/bin/sys.  This will be
+  # used as the sysname search path.
+  type /usr/bin/sys 1>/dev/null 2>/dev/null
+  if [ $? -eq 0 ]; then
+    if [ "${_ARCH}_${_DIST}${_VER}" != "_" ]; then
+      SYSNAMELIST="${_ARCH}_${_DIST}${_VER} $(/usr/bin/sys)"
+    fi
+  fi
+  
+  # Set the sysname
+  if [ -n "$SYSNAMELIST" ] ; then
+    _FLAG=0
+    _CMD=""
+    for SYSNAME in $SYSNAMELIST ; do
+      if [ $_FLAG == "1" ] ; then
+        _CMD="$_CMD -newsys $SYSNAME"
+      else
+        _FLAG=1
+        _CMD="/usr/bin/fs sysname -newsys $SYSNAME"
+      fi
+    done
+  fi
+  echo "Setting sysname: $SYSNAMELIST"
+  $_CMD > /dev/null
+}
+
+killafs() {
+  SIGNAL=$1
+  PIDS=`lsof -Fp $AFS | sed -e 's/p//'`
+  if [ "x" != "x$PIDS" ]; then
+    kill -$SIGNAL $PIDS >/dev/null 2>&1
+    sleep 3
+  fi
+}
+
+check_kernelmodule() {
+  /sbin/modprobe --allow-unsupported-modules -l $AFS_KERNEL_MODULE > /dev/null 2>&1
+  RETVAL=$?
+  if [ $RETVAL -eq 0 ]; then
+    MODPROBEOPT="--allow-unsupported-modules"
+  else
+    MODPROBEOPT=""
+  fi
+  /sbin/modprobe $MODPROBEOPT $AFS_KERNEL_MODULE > /dev/null 2>&1
+  RETVAL=$?
+  [ $RETVAL -eq 0 ] && return 0 # Kernel module loaded, continue...
+  echo -n "Attempting to recompile kernel module..."
+  KERNEL_VERSION=`uname -r`
+  KMOD_BUILDLOG=/tmp/openafs-kmod-build-`date +%Y%m%d-%H%M`.log
+  echo "Build log for OpenAFS module: `date`" > $KMOD_BUILDLOG
+  if [ -d /usr/src/kernel-modules/openafs/libafs_tree ]; then
+    cd /usr/src/kernel-modules/openafs/libafs_tree
+    make clean >> $KMOD_BUILDLOG 2>&1
+    ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >> $KMOD_BUILDLOG 2>&1
+    make -j4 >> $KMOD_BUILDLOG 2>&1
+    MODULEDIR=/lib/modules/$KERNEL_VERSION/kernel/fs/openafs
+    if [ -d $MODULEDIR ]; then # Clean out any occurance of old modules.
+      rm -rf $MODULEDIR
+    fi
+    mkdir $MODULEDIR
+    cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko $MODULEDIR/libafs.ko
+    ln $MODULEDIR/libafs.ko $MODULEDIR/openafs.ko
+    depmod -a >> $KMOD_BUILDLOG 2>&1
+    /sbin/modprobe $MODPROBEOPT $AFS_KERNEL_MODULE >> $KMOD_BUILDLOG 2>&1
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $KMOD_BUILDLOG && echo "Build succeded!" && return 0
+    echo
+    echo "Failed to build kernel module."
+    echo -n "See $KMOD_BUILDLOG for more details."
+  else
+    echo
+    echo -n "OpenAFS Kernel source not installed."
+  fi
+}
+
+rm_wrong_module() {
+  kernel=`uname -r`
+  module="/lib/modules/$kernel/kernel/fs/openafs/libafs.ko"
+  if [ -f $module ] ; then
+    mod_version=`strings $module | grep OpenAFS | awk '{print $3}'`
+    pkg_version=`/usr/bin/fs --version | awk '{print $2}'`
+    if [ "$mod_version" != "$pkg_version" ] ; then
+      rm "/lib/modules/`uname -r`/kernel/fs/openafs/libafs.ko"
+      echo "Removed libafs.ko, version mismatch"
+    fi
+  fi
+}
+
+package_update() {
+  if [ "$UPDATE" == "true" ] ; then
+    echo "Checking for OpenAFS updates.."
+    zypper --no-gpg-checks refresh
+    package_status=`zypper info openafs 2>/dev/null | grep ^Status | awk '{print $2}'`
+    if [ "$package_status" == "out-of-date" ] ; then
+      echo "Upgrading OpenAFS"
+      zypper -q -V > /dev/null 2>&1
+      RETVAL=$?
+      if [ $RETVAL -eq 0 ]; then
+        ZYPPEROPTS="-q"
+      else
+        ZYPPEROPTS=""
+      fi
+      zypper $ZYPPEROPTS -n in openafs openafs-docs openafs-krb5-mit openafs-client openafs-kernel-source 2>/dev/null
+      if [ -d "/var/cache/openafs" ] ; then
+        rm -rf /var/cache/openafs/*
+      fi
+    fi
+  fi
+}
+
+# First reset status of this service
+rc_reset
+
+# Return values acc. to LSB for all commands but status:
+# 0 - success
+# 1 - generic or unspecified error
+# 2 - invalid or excess argument(s)
+# 3 - unimplemented feature (e.g. "reload")
+# 4 - insufficient privilege
+# 5 - program is not installed
+# 6 - program is not configured
+# 7 - program is not running
+#
+# Note that starting an already running service, stopping
+# or restarting a not-running service as well as the restart
+# with force-reload (in case signalling is not supported) are
+# considered a success.
+
+case "$1" in
+  start)
+    echo "Starting $DAEMON "
+    mkdir -p $AFS
+    if grep -q ^$AFS_KERNEL_MODULE /proc/modules ; then
+        echo -n "  -> $DAEMON already running "
+    else
+      # A configured zypper repository is needed for the package-update
+      package_update
+      rm_wrong_module
+      if check_kernelmodule ; then
+        ps ax | grep -q '\[afsd\]' || $DAEMON_BIN $AFSD_ARGS
+        RETVAL=$?
+        if [ $RETVAL -eq 0 ] ; then
+          setsysname
+          setsuid
+          # background job that should run after the AFS initialization...
+          (sleep 60; [ -x $SETSERVERPREFS ] && $SETSERVERPREFS) </dev/null >/dev/null 2>&1 &
+        else
+          rc_failed 1
+        fi
+      else
+        #modprobe failed
+        rc_failed 5
+      fi
+    fi
+    # Remember status and be verbose
+    rc_status -v
+    ;;
+  stop)
+    [ "x`whoami`" = xroot ] || exit 4 # do not allow regular user to kill all his processes
+    echo -n "Shutting down $DAEMON "
+    if ps ax | grep -q '\[afsd\]'; then
+      umount $AFS
+      RETVAL=$?
+    else
+      echo -n " -> $DAEMON not running "
+      RETVAL=0
+    fi
+    if [ $RETVAL -eq 0 ] ; then
+      if grep -q ^$AFS_KERNEL_MODULE /proc/modules ; then
+        /sbin/rmmod $AFS_KERNEL_MODULE || rc_failed 1
+      fi
+    else
+      rc_failed 1
+    fi
+    # rmtsys doesn't go away, so kill them all to be sure
+    #killall $DAEMON_BIN > /dev/null 2>&1
+    # Remember status and be verbose
+    rc_status -v
+    ;;
+  stop-force)
+    [ "x`whoami`" = xroot ] || exit 4 # do not allow regular user to kill all his processes
+    echo -n "Shutting down $DAEMON "
+    if ps ax | grep -q '\[afsd\]'; then
+      echo
+      echo "Sending all processes using $AFS the TERM signal ..."
+      killafs TERM
+      echo "Sending all processes using $AFS the KILL signal ..."
+      killafs KILL
+        umount $AFS
+    fi
+    if grep -q ^$AFS_KERNEL_MODULE /proc/modules ; then
+      /sbin/rmmod $AFS_KERNEL_MODULE || rc_failed 1
+    fi
+    # rmtsys doesn't go away, so kill them all to be sure
+    #killall $DAEMON_BIN > /dev/null 2>&1
+    # Remember status and be verbose
+    rc_status -v
+    ;;
+  try-restart)
+    ## Stop the service and if this succeeds (i.e. the
+    ## service was running before), start it again.
+    $0 stop  &&  $0 start
+    
+    # Remember status and be quiet
+    rc_status
+    ;;
+  restart)
+    ## Stop the service and regardless of whether it was
+    ## running or not, start it again.
+    $0 stop
+    $0 start
+    
+    # Remember status and be quiet
+    rc_status
+    ;;
+  status)
+    echo -n "Checking for $DAEMON: "
+    ## Check status with checkproc(8), if process is running
+    ## checkproc will return with exit status 0.
+    
+    # Status has a slightly different for the status command:
+    # 0 - service running
+    # 1 - service dead, but /var/run/  pid  file exists
+    # 2 - service dead, but /var/lock/ lock file exists
+    # 3 - service not running
+    
+    # NOTE: checkproc returns LSB compliant status values.
+    
+    ps ax | grep -q '\[afsd\]' || rc_failed 3
+    
+    rc_status -v
+    ;;
+  check)
+    echo -n "Checking $DAEMON "
+    if ps ax | grep -q '\[afsd\]'; then
+      if [ -x $HEALTHCHECK ]; then
+        $HEALTHCHECK
+      else
+        echo -n $"Check-script not available: $HEALTHCHECK"
+        echo
+        RETVAL=1
+      fi
+    else
+      echo -n " -> $DAEMON not running "
+      RETVAL=0
+    fi
+  ;;
+  *)
+    echo "Usage: $0 {start|stop|stop-force|status|check|try-restart|restart}"
+    exit 1
+    ;;
+esac
+rc_exit
