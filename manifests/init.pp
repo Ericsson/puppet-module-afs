@@ -140,10 +140,7 @@ class afs (
   if type($config_client_update) == 'boolean' {
     $config_client_update_real = $config_client_update
   } else {
-    $config_client_update_real = $config_client_update ? {
-      'USE_DEFAULTS' => $config_client_update_default,
-      default        => str2bool($config_client_update)
-    }
+    $config_client_update_real = str2bool($config_client_update)
   }
 
   if type($create_symlinks) == 'boolean' {
