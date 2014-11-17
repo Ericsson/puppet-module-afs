@@ -1,9 +1,9 @@
 #!/bin/bash
 #
 # Copyright (c) 2014 AFS-Core Ericsson
-# Version v1.5, 2014-08-27
+# Version v1.6, 2014-11-11
 #
-# openafs-client	Start/Stop the OpenAFS Client
+# openafs-client  Start/Stop the OpenAFS Client
 #
 # chkconfig: 2345 50 50
 # description: OpenAFS is a distributed filesystem.
@@ -80,7 +80,7 @@ setsysname() {
       _VER=""
       ;;
   esac
-
+  
   # Sysname list.  The order here is from specific to general, with a
   # fallback to the compiled-in value from /usr/bin/sys.  This will be
   # used as the sysname search path.
@@ -90,7 +90,7 @@ setsysname() {
        SYSNAMELIST="${_ARCH}_${_DIST}${_VER} $(/usr/bin/sys)"
     fi
   fi
-  
+
   # Set the sysname
   if [ -n "$SYSNAMELIST" ] ; then
     _FLAG=0
@@ -139,7 +139,7 @@ check_kernelmodule() {
     dkms status -m $AFS_KERNEL_MODULE -k `uname -r` | grep -w 'installed-weak' > /dev/null
     if [ $? -eq 0 ]; then
       echo
-      echo "Weak module detected, will be removed.."	
+      echo "Weak module detected, will be removed.."
       if [ -h /lib/modules/`uname -r`/weak-updates/${AFS_KERNEL_MODULE}.ko ]; then
         rm -fv /lib/modules/`uname -r`/weak-updates/${AFS_KERNEL_MODULE}.ko
       fi
@@ -163,12 +163,12 @@ check_kernelmodule() {
   KMOD_BUILDLOG=/tmp/openafs-kmod-build-`date +%Y%m%d-%H%M`.log
 
   echo "Build log for OpenAFS module: `date`" > $KMOD_BUILDLOG
-
+  
   if [ -d /usr/src/openafs-kernel-$OPENAFS_VERSION/src -a -f /usr/src/openafs-kernel-$OPENAFS_VERSION/src/configure ]; then
     cd /usr/src/openafs-kernel-$OPENAFS_VERSION/src
 
     make clean >> $KMOD_BUILDLOG 2>&1
-    
+
     ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >> $KMOD_BUILDLOG 2>&1
     make -j4 >> $KMOD_BUILDLOG 2>&1
 
@@ -206,9 +206,8 @@ rm_wrong_module() {
     return 0
   fi
 
-  kernel=`uname -r`
-  module="/lib/modules/$kernel/kernel/fs/openafs/${AFS_KERNEL_MODULE}.ko"
-  if [ -f $module ] ; then
+  module="`/sbin/modinfo -F filename $AFS_KERNEL_MODULE 2> /dev/null`"
+  if [ -f "$module" ] ; then
     mod_version=`strings $module | grep OpenAFS | awk '{print $3}'`
     pkg_version=`/usr/bin/fs --version | awk '{print $2}'`
     if [ "$mod_version" != "$pkg_version" ] ; then
@@ -216,7 +215,7 @@ rm_wrong_module() {
       if [ -f "/lib/modules/`uname -r`/kernel/fs/openafs/openafs.ko" ]; then
         rm "/lib/modules/`uname -r`/kernel/fs/openafs/openafs.ko"
       fi
-      echo "Removed openafs.ko/libafs.ko, version mismatch"
+      echo "Removed libafs.ko version mismatch"
     fi
   fi
 }
@@ -307,7 +306,7 @@ stop() {
     lsmod | grep -w $AFS_KERNEL_MODULE > /dev/null
     if [ $? -ne 0 ]; then
       AFS_KERNEL_MODULE=`lsmod | awk '/afs/ {print $1}'`
-    fi 
+    fi
     rmmod $AFS_KERNEL_MODULE
     RETVAL=$?
   fi
@@ -342,7 +341,7 @@ stop-force() {
     lsmod | grep -w $AFS_KERNEL_MODULE > /dev/null
     if [ $? -ne 0 ]; then
       AFS_KERNEL_MODULE=`lsmod | awk '/afs/ {print $1}'`
-    fi 
+    fi
     rmmod $AFS_KERNEL_MODULE
     RETVAL=$?
   fi
