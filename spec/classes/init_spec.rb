@@ -43,8 +43,7 @@ describe 'afs' do
           }
         end
 
-# TODO: This will break when multiple packages are used (RedHat & Suse):
-#        it { should compile.with_all_deps }
+        it { should compile.with_all_deps }
 
         # build package array for osfamily depended required packages
         required_packages_array = Array.new
