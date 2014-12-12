@@ -1,7 +1,7 @@
 #! /bin/sh
 #
 # Copyright (c) 2014 AFS-Core Ericsson
-# Version v1.4, 2014-11-11
+# Version v1.5, 2014-12-11
 #
 # System startup script for OpenAFS
 #
@@ -56,23 +56,29 @@ setsuid() {
   fi
 }
 
+firstint() {
+  sed 's/^[^0-9]*//; s/[^0-9].*//'
+}
+
 setsysname() {
   _ARCH=`uname -i | sed 's/x86_64/amd64/'`
   _DIST=""
+  _VER=""
   
+  if [ -f "/etc/debian_version" ]; then
+    if [ -f /etc/lsb-release ]; then
+      _DIST=`awk -F= '$1=="DISTRIB_ID" {print $2}' /etc/lsb-release`
+      _VER=`awk -F= '$1=="DISTRIB_RELEASE" {print $2}' /etc/lsb-release | firstint`
+    fi
+    [ -n "$_DIST" ] ||
+      _DIST=`lsb_release -d | awk '/Description/ {print $2}'`
+    [ -n "$_VER" ] ||
+      _VER=`lsb_release -d | awk '/Description/ {print $3}' | firstint`
+  fi
   for d in novell SuSE fedora redhat centos ; do
     if [ -f "/etc/$d-release" ] ; then
       _DIST=$d
-      # What version of the distribution are we?
-      _VER=`/bin/rpm -qf --qf '%{version}\n' /etc/${_DIST}-release | sed 's/\([0-9]\+\)[a-zA-Z]\+\|\..*/\1/'`
-      break
-    elif [ -f "/etc/debian_version" ]; then
-      type lsb_release 1>/dev/null 2>/dev/null
-      if [ $? -eq 0 ]; then
-        DESCRIPTION=`lsb_release -d`
-        _DIST=`lsb_release -d | awk '/Description/ {print $2}'`
-        _VER=`lsb_release -d | awk '/Description/ {print $3}' | sed 's/\([0-9]\+\)\..*/\1/'`
-      fi
+      _VER=`rpm -qf --qf '%{version}\n' /etc/${_DIST}-release | firstint`
       break
     fi
   done
@@ -94,37 +100,27 @@ setsysname() {
       _DIST="ubunt"
       ;;
     *)
-      _DIST=""
-      _ARCH=""
-      _VER=""
+      return
       ;;
   esac
-  
+
   # Sysname list.  The order here is from specific to general, with a
   # fallback to the compiled-in value from /usr/bin/sys.  This will be
   # used as the sysname search path.
   type /usr/bin/sys 1>/dev/null 2>/dev/null
   if [ $? -eq 0 ]; then
-    if [ "${_ARCH}_${_DIST}${_VER}" != "_" ]; then
-      SYSNAMELIST="${_ARCH}_${_DIST}${_VER} $(/usr/bin/sys)"
+    if [ -n "$_VER" ]; then
+       SYSNAMELIST="${_ARCH}_${_DIST}${_VER} $(/usr/bin/sys)"
     fi
   fi
-  
+
   # Set the sysname
-  if [ -n "$SYSNAMELIST" ] ; then
-    _FLAG=0
-    _CMD=""
-    for SYSNAME in $SYSNAMELIST ; do
-      if [ $_FLAG == "1" ] ; then
-        _CMD="$_CMD -newsys $SYSNAME"
-      else
-        _FLAG=1
-        _CMD="/usr/bin/fs sysname -newsys $SYSNAME"
-      fi
-    done
+  if [ -n "$SYSNAMELIST" ]; then
+    SYSNAME=`echo "$SYSNAMELIST" | awk 'BEGIN {ORS=" "} { for (i=1;i<=NF;i+=1) print "-newsys",$i }'`
+    _CMD="/usr/bin/fs sysname $SYSNAME"
+    echo "Setting sysname: $SYSNAMELIST"
+    $_CMD > /dev/null
   fi
-  echo "Setting sysname: $SYSNAMELIST"
-  $_CMD > /dev/null
 }
 
 killafs() {
@@ -264,6 +260,7 @@ case "$1" in
     if ps ax | grep -q '\[afsd\]'; then
       umount $AFS
       RETVAL=$?
+			$DAEMON_BIN -shutdown
     else
       echo -n " -> $DAEMON not running "
       RETVAL=0
@@ -290,6 +287,7 @@ case "$1" in
       echo "Sending all processes using $AFS the KILL signal ..."
       killafs KILL
         umount $AFS
+			  $DAEMON_BIN -shutdown
     fi
     if grep -q ^$AFS_KERNEL_MODULE /proc/modules ; then
       /sbin/rmmod $AFS_KERNEL_MODULE || rc_failed 1
