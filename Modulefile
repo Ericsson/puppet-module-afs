@@ -1,5 +1,5 @@
 name         'puppet-module-afs'
-version      '1.0.1'
+version      '1.0.2'
 source       'ssh://gerrit.ericsson.se:29418/puppet/puppet-module-afs'
 author       'phil.friderici@ericsson.com'
 license      'Apache License, Version 2.0'

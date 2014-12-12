@@ -16,6 +16,20 @@ This module provides OS default values for these OSfamilies:
 For other OSfamilies support, please specify all parameters which defaults to 'USE_DEFAULTS'.
 
 
+# Version history #
+1.0.2 2014-12-12
+updates RedHat init script to v1.7
+updates Suse init script to v1.5
+updates Solairs init script to v1.5
+
+1.0.1 2014-11-20
+updates RedHat init script to v1.6
+updates Suse init script to v1.4
+small spec test fix
+
+1.0.0 2014-11-13
+initial release
+
 # Parameters #
 
 afs_cellserverdb
