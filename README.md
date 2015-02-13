@@ -17,6 +17,9 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 
 # Version history #
+1.0.3 2015-02-13
+deprecate type() as preparation for Puppet v4. Needs stdlib >= 4.2 now
+
 1.0.2 2014-12-12
 updates RedHat init script to v1.7
 updates Suse init script to v1.5

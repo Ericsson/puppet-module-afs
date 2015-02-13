@@ -123,7 +123,7 @@ class afs (
 
   $config_client_args_real = $config_client_args
 
-  if type($config_client_dkms) == 'boolean' {
+  if is_bool($config_client_dkms) == true {
     $config_client_dkms_real = $config_client_dkms
   } else {
     $config_client_dkms_real = $config_client_dkms ? {
@@ -137,13 +137,13 @@ class afs (
     default        => $config_client_path
   }
 
-  if type($config_client_update) == 'boolean' {
+  if is_bool($config_client_update) == true {
     $config_client_update_real = $config_client_update
   } else {
     $config_client_update_real = str2bool($config_client_update)
   }
 
-  if type($create_symlinks) == 'boolean' {
+  if is_bool($create_symlinks) == true {
     $create_symlinks_real = $create_symlinks
   } else {
     $create_symlinks_real = str2bool($create_symlinks)
