@@ -7,6 +7,6 @@ summary      'Manage OpenAFS'
 description  'Manage OpenAFS'
 project_page 'https://gerrit.ericsson.se/#/admin/projects/puppet/puppet-module-afs'
 
-dependency 'puppetlabs/stdlib',        '>= 3.2.0'
+dependency 'puppetlabs/stdlib',        '>= 4.2.0'
 dependency 'ghoneycutt/common',        '>= 1.0.0'
 dependency 'ghoneycutt/stdlibfeatures','>= 0.1.0'
