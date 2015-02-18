@@ -33,6 +33,16 @@ describe 'afs' do
         :init_template_default      => 'openafs-client-Solaris',
         :package_name_default       => [ 'EISopenafs' ],
       },
+    'Ubuntu' =>
+      { :osfamily                   => 'Debian',
+        :afs_config_path_default    => '/etc/openafs',
+        :cache_path_default         => '/var/cache/openafs',
+        :config_client_dkms_default => true,
+        :config_client_path_default => '/etc/default/openafs-client',
+        :init_script_default        => '/etc/init.d/openafs-client',
+        :init_template_default      => 'openafs-client-Ubuntu',
+        :package_name_default       => [ 'openafs-client', 'openafs-doc', 'openafs-krb5', 'openafs-modules-dkms', 'openafs-modules-source', ],
+      },
   }
 
   describe 'with default values for parameters' do
