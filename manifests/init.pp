@@ -68,7 +68,7 @@ class afs (
       $config_client_path_default = '/etc/default/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
       $init_template_default      = 'openafs-client-Ubuntu'
-      $package_name_default       = [ 'openafs-client', 'openafs-doc', 'openafs-krb5', 'openafs-modules-dkms', 'openafs-modules-source', ]
+      $package_name_default       = [ 'openafs-modules-dkms', 'openafs-modules-source', 'openafs-client', 'openafs-doc', 'openafs-krb5', 'dkms' ]
     }
     default: {
       $os_defaults_missing = true
