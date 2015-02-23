@@ -1,6 +1,6 @@
 {
   "name": "Phil-Friderici-afs",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "author": "Phil-Friderici",
   "summary": "Manage OpenAFS",
   "license": "Apache-2.0",
@@ -45,6 +45,13 @@
     },
     {
       "operatingsystem": "SLED"
+    },
+    {
+      "operatingsystem": "Ubuntu",
+      "operatingsystemrelease": [
+        "12.04"
+        "14.04"
+      ]
     }
   ],
   "requirements": [

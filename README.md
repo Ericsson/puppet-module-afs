@@ -9,14 +9,22 @@ The module installs and configures OpenAFS.
 
 This module provides OS default values for these OSfamilies:
 
- * RedHat 5/6
+ * RedHat 5/6/7
  * Solaris 10
  * Suse 10/11
+ * Ubuntu 12.04/14.04
 
 For other OSfamilies support, please specify all parameters which defaults to 'USE_DEFAULTS'.
 
 
 # Version history #
+1.1.0 2015-02-23
+add Ubuntu support for 12.04/14.04
+updates RedHat init script to 1.10
+updates Suse init script to v1.8
+updates Solairs init script to v1.8
+updates Ubuntu init script to v1.2
+
 1.0.3 2015-02-13
 deprecate type() as preparation for Puppet v4. Needs stdlib >= 4.2 now
 
