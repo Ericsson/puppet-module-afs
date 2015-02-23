@@ -1,7 +1,7 @@
 #! /bin/sh
 #
-# Copyright (c) 2014 AFS-Core Ericsson
-# Version v1.5, 2014-12-11
+# Copyright (c) 2015 AFS-Core Ericsson
+# Version v1.8, 2015-02-19
 #
 # System startup script for OpenAFS
 #
@@ -24,9 +24,8 @@ SUPPORTS_HUP="no"
 DAEMON_BIN=/usr/sbin/afsd
 AFS_KERNEL_MODULE=libafs
 AFS=/afs
+DEFAULTCELL="sunrise.ericsson.se"
 SUIDCELLS=/etc/openafs/SuidCells
-SETSERVERPREFS=/afs/sunrise.ericsson.se/afsadm/sbin/afs_setserverprefs.sh
-HEALTHCHECK=/afs/sunrise.ericsson.se/afsadm/bin/afs_site_health_check.sh
 
 #test -x $DAEMON_BIN || exit 5
 
@@ -58,6 +57,13 @@ setsuid() {
 
 firstint() {
   sed 's/^[^0-9]*//; s/[^0-9].*//'
+}
+
+get_cell() {
+  CELL=`/usr/bin/fs wscell 2>/dev/null | sed -e "s/.*to cell '\(.*\)'/\1/"`
+  if [ -z "$CELL" ]; then
+    CELL="$DEFAULTCELL"
+  fi
 }
 
 setsysname() {
@@ -241,6 +247,8 @@ case "$1" in
         if [ $RETVAL -eq 0 ] ; then
           setsysname
           setsuid
+          get_cell
+          SETSERVERPREFS=/afs/$CELL/afsadm/sbin/afs_setserverprefs.sh
           # background job that should run after the AFS initialization...
           (sleep 60; [ -x $SETSERVERPREFS ] && $SETSERVERPREFS) </dev/null >/dev/null 2>&1 &
         else
@@ -260,7 +268,9 @@ case "$1" in
     if ps ax | grep -q '\[afsd\]'; then
       umount $AFS
       RETVAL=$?
-			$DAEMON_BIN -shutdown
+      if [ $RETVAL -eq 0 ] ; then
+        $DAEMON_BIN -shutdown
+      fi
     else
       echo -n " -> $DAEMON not running "
       RETVAL=0
@@ -287,7 +297,7 @@ case "$1" in
       echo "Sending all processes using $AFS the KILL signal ..."
       killafs KILL
         umount $AFS
-			  $DAEMON_BIN -shutdown
+        $DAEMON_BIN -shutdown
     fi
     if grep -q ^$AFS_KERNEL_MODULE /proc/modules ; then
       /sbin/rmmod $AFS_KERNEL_MODULE || rc_failed 1
@@ -334,6 +344,8 @@ case "$1" in
   check)
     echo -n "Checking $DAEMON "
     if ps ax | grep -q '\[afsd\]'; then
+      get_cell
+      HEALTHCHECK=/afs/$CELL/afsadm/bin/afs_site_health_check.sh
       if [ -x $HEALTHCHECK ]; then
         $HEALTHCHECK
       else

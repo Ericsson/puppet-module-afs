@@ -13,13 +13,14 @@
 
 #
 # Disk-cache options
-# Size of disk-cache is configured in file (RHEL + Solaris) /usr/vice/etc/cacheinfo or (SLE) /etc/openafs/cacheinfo
+# Size of disk-cache is configured in file (RHEL + Solaris) /usr/vice/etc/cacheinfo or (SLE + Ubuntu) /etc/openafs/cacheinfo
 # Size should not be bigger than 20% of machine's memory, so that it can fit in filesystem-caching by OS.
 # It is recommended for the disk cache to be on its own dedicated partition, to guarantee that the disk does not fill up.
 # On Solaris, ZFS in some scenarios does not perform well for cache behavior, so instead create a zvol with UFS for the cache partition.
-# If the cache-directory (RHEL + Solaris) /usr/vice/cache or (SLE) /var/cache/openafs is on a separate partition,
+# If the cache-directory (RHEL + Solaris) /usr/vice/cache or (SLE + Ubuntu) /var/cache/openafs is on a separate partition,
 # the cache-size should not be bigger than 95% of the partition-size. The client will not start if cache-size is bigger!
 # Default value is 1GB, size should be monitored and then be adjusted. On Terminal-servers 3-4GB is a good starting point.
+# Due to a bug in OpenAFS for Solaris11: Don't use ZFS for cache. Systems using UFS are not affected (even if the UFS filesystem is on a ZFS zvol)
 # AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime"
 AFSD_ARGS="<%= @config_client_args_real %>"
 
@@ -34,17 +35,18 @@ AFSD_ARGS="<%= @config_client_args_real %>"
 # This section is to enable a update_package feature in the startup-script via zypper (SLE) or yum (RHEL).
 # At the moment only available on Linux platform (SLE + RHEL).
 # It will be ignored on other platforms.
-# The client need a configured and activated repository.
+# The client need a configured and activated repository which includes the needed AFS packages.
 # Available options: false | true
 # UPDATE="false"
 UPDATE="<%= @config_client_update_real %>"
 
 #
 # This section is to control the AFS kernel module handling via DKMS or the openafs start-script.
-# At the moment only available on RHEL platform. On SLE no DKMS available.
-# It will be ignored on other platforms.
-# The package openafs-kernel-source is needed for the start-script method.
+# At the moment only available on RHEL and Ubuntu platform. On SLE <= 11 no stable DKMS available.
+# It will be ignored on other platformsi like Solaris.
+# The package openafs-kernel-source is needed for the compile start-script method.
 # For dkms the following packages are needed: dkms dkms-openafs
+# For both options packages to build kernel-modules are needed.
 # Available options: false | true
 # DKMS="true"
 DKMS="<%= @config_client_dkms_real %>"
