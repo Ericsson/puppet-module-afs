@@ -18,6 +18,9 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 
 # Version history #
+1.1.2 2015-03-20
+re-enable custom fact (afs_version) for RPMs
+
 1.1.1 2015-03-20
 add Ubuntu support to the custom fact (afs_version)
 
