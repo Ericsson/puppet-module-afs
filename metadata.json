@@ -67,6 +67,5 @@
   "dependencies": [
     {"name":"puppetlabs/stdlib","version_requirement":">= 4.2.0"},
     {"name":"ghoneycutt/common","version_requirement":">= 1.0.0"},
-    {"name":"ghoneycutt/stdlibfeatures","version_requirement":">= 0.1.0"}
   ]
 }

@@ -8,4 +8,3 @@ project_page 'https://github.com/Phil-Friderici/puppet-module-afs'
 
 dependency 'puppetlabs/stdlib',        '>= 4.2.0'
 dependency 'ghoneycutt/common',        '>= 1.0.0'
-dependency 'ghoneycutt/stdlibfeatures','>= 0.1.0'
