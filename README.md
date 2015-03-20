@@ -18,6 +18,9 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 
 # Version history #
+1.1.1 2015-03-20
+add Ubuntu support to the custom fact (afs_version)
+
 1.1.0 2015-02-23
 add Ubuntu support for 12.04/14.04
 updates RedHat init script to 1.10
