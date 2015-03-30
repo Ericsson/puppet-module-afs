@@ -153,6 +153,24 @@ describe 'afs' do
       it { should_not contain_file('afs_cron_job') }
       it { should_not contain_service('afs_openafs_client_service') }
     end
+
+    context "where osfamily is <Suse> and operatingsystemrelease is <12>" do
+      let :facts do
+        { :osfamily               => 'Suse',
+          :operatingsystemrelease => '12',
+        }
+      end
+
+      it {
+        should contain_file_line('allow_unsupported_modules').with ({
+          'ensure' => 'present',
+          'path'   => '/etc/modprobe.d/10-unsupported-modules.conf',
+          'line'   => 'allow_unsupported_modules 1',
+          'match'  => '^allow_unsupported_modules 0$',
+        })
+      }
+    end
+
   end
 
   describe "with optional parameters set" do

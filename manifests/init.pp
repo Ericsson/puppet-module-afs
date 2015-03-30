@@ -304,6 +304,14 @@ class afs (
   }
 
   common::mkdir_p { $afs_config_path_real: }
+  if ($::osfamily == 'Suse' and $::operatingsystemrelease == '12') {
+    file_line { 'allow_unsupported_modules':
+      ensure => 'present',
+      path   => '/etc/modprobe.d/10-unsupported-modules.conf',
+      line   => 'allow_unsupported_modules 1',
+      match  => '^allow_unsupported_modules 0$',
+    }
+  }
 
   file { 'afs_init_script' :
     ensure  => file,
