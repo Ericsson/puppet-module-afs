@@ -11,13 +11,16 @@ This module provides OS default values for these OSfamilies:
 
  * RedHat 5/6/7
  * Solaris 10
- * Suse 10/11
+ * Suse 10/11/12
  * Ubuntu 12.04/14.04
 
 For other OSfamilies support, please specify all parameters which defaults to 'USE_DEFAULTS'.
 
 
 # Version history #
+1.2.0 2015-03-30
+add support for SLES 12
+
 1.1.2 2015-03-20
 re-enable custom fact (afs_version) for RPMs
 
