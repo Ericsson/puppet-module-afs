@@ -18,6 +18,9 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 
 # Version history #
+1.2.1 2015-03-31
+updates Suse init script to v1.9
+
 1.2.0 2015-03-30
 add support for SLES 12
 
