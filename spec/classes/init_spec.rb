@@ -10,7 +10,7 @@ describe 'afs' do
         :config_client_path_default => '/etc/sysconfig/openafs-client',
         :init_script_default        => '/etc/init.d/openafs-client',
         :init_template_default      => 'openafs-client-RedHat',
-        :package_name_default       => [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs' ],
+        :package_name_default       => [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel' ],
 
       },
     'Suse' =>
@@ -162,7 +162,7 @@ describe 'afs' do
       end
 
       it {
-        should contain_file_line('allow_unsupported_modules').with ({
+        should contain_file_line('allow_unsupported_modules').with({
           'ensure' => 'present',
           'path'   => '/etc/modprobe.d/10-unsupported-modules.conf',
           'line'   => 'allow_unsupported_modules 1',

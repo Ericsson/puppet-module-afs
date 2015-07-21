@@ -41,7 +41,7 @@ class afs (
       $config_client_path_default = '/etc/sysconfig/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
       $init_template_default      = 'openafs-client-RedHat'
-      $package_name_default       = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs' ]
+      $package_name_default       = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs' , 'glibc-devel' ]
     }
     'Suse': {
       $afs_config_path_default    = '/etc/openafs'
@@ -181,7 +181,13 @@ class afs (
 
   $service_provider_real = $service_provider
 
-  if ($::osfamily == 'Solaris') and ($::is_virtual == 'true') and ($::virtual == 'zone') {
+  if is_bool($::is_virtual) == true {
+    $is_virtual_bool = $::is_virtual
+  } else {
+    $is_virtual_bool = str2bool($::is_virtual)
+  }
+
+  if ($::osfamily == 'Solaris') and ($is_virtual_bool == true) and ($::virtual == 'zone') {
     $solaris_container_real = true
   }
 
