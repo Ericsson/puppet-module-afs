@@ -162,7 +162,7 @@ describe 'afs' do
       end
 
       it {
-        should contain_file_line('allow_unsupported_modules').with ({
+        should contain_file_line('allow_unsupported_modules').with({
           'ensure' => 'present',
           'path'   => '/etc/modprobe.d/10-unsupported-modules.conf',
           'line'   => 'allow_unsupported_modules 1',

@@ -181,7 +181,13 @@ class afs (
 
   $service_provider_real = $service_provider
 
-  if ($::osfamily == 'Solaris') and ($::is_virtual == 'true') and ($::virtual == 'zone') {
+  if is_bool($::is_virtual) == true {
+    $is_virtual_bool = $::is_virtual
+  } else {
+    $is_virtual_bool = str2bool($::is_virtual)
+  }
+
+  if ($::osfamily == 'Solaris') and ($is_virtual_bool == true) and ($::virtual == 'zone') {
     $solaris_container_real = true
   }
 
