@@ -59,7 +59,7 @@ class afs (
       $config_client_path_default = '/usr/vice/etc/sysconfig/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
       $init_template_default      = 'openafs-client-Solaris'
-      $package_name_default       = [ 'EISopenafs', 'dummy' ]
+      $package_name_default       = [ 'EISopenafs' ]
     }
     'Debian': {
       $afs_config_path_default    = '/etc/openafs'
@@ -326,7 +326,7 @@ class afs (
     group   => 'root',
     mode    => '0755',
     source  => "puppet:///modules/afs/${init_template_real}",
-    require => Package[$package_name_real],
+    require => 'Package[${package_name_real}]',
   }
 
   file { 'afs_config_cacheinfo' :
@@ -436,7 +436,7 @@ class afs (
       hasstatus  => false,
       hasrestart => false,
       restart    => '/bin/true',
-      require    => Package[$package_name_real],
+      require    => [ Package[$package_name_real], ],
       status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
     }
   }
