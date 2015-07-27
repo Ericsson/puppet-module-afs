@@ -59,7 +59,7 @@ class afs (
       $config_client_path_default = '/usr/vice/etc/sysconfig/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
       $init_template_default      = 'openafs-client-Solaris'
-      $package_name_default       = [ 'EISopenafs', 'dummy' ]
+      $package_name_default       = [ 'EISopenafs' ]
     }
     'Debian': {
       $afs_config_path_default    = '/etc/openafs'
