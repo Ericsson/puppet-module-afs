@@ -257,11 +257,6 @@ class afs (
 
   validate_string($init_template_real)
 
-
-  if $afs_cron_job_content_real != undef {
-    validate_string($afs_cron_job_content_real)
-  }
-
   validate_string($package_adminfile_real)
 
   validate_array($package_name_real)
@@ -307,9 +302,14 @@ class afs (
 
   package { $package_name_real:
     ensure => installed,
+    before => [
+                File[afs_init_script],
+                File[afs_config_client],
+              ],
   }
 
   common::mkdir_p { $afs_config_path_real: }
+
   if ($::osfamily == 'Suse' and $::operatingsystemrelease == '12') {
     file_line { 'allow_unsupported_modules':
       ensure => 'present',
@@ -320,13 +320,12 @@ class afs (
   }
 
   file { 'afs_init_script' :
-    ensure  => file,
-    path    => $init_script_real,
-    owner   => 'root',
-    group   => 'root',
-    mode    => '0755',
-    source  => "puppet:///modules/afs/${init_template_real}",
-    require => Package[$package_name_real],
+    ensure => file,
+    path   => $init_script_real,
+    owner  => 'root',
+    group  => 'root',
+    mode   => '0755',
+    source => "puppet:///modules/afs/${init_template_real}",
   }
 
   file { 'afs_config_cacheinfo' :
@@ -350,7 +349,7 @@ class afs (
     group   => 'root',
     mode    => '0644',
     content => template('afs/openafs-client.erb'),
-    require => [ Package[$package_name_real], Common::Mkdir_p[$config_client_dir_real], ],
+    require => Common::Mkdir_p[$config_client_dir_real],
   }
 
   if $afs_suidcells_real != undef {
@@ -402,7 +401,7 @@ class afs (
           month    => $afs_cron_job_month_real,
           weekday  => $afs_cron_job_weekday_real,
           monthday => $afs_cron_job_monthday_real,
-          require  => Package[$package_name_real],
+          require  => File[afs_init_script],
         }
       }
       else {
@@ -413,7 +412,7 @@ class afs (
           group   => 'root',
           mode    => '0755',
           content => $afs_cron_job_content_real,
-          require => Package[$package_name_real],
+          require => File[afs_init_script],
         }
       }
     }
@@ -436,8 +435,8 @@ class afs (
       hasstatus  => false,
       hasrestart => false,
       restart    => '/bin/true',
-      require    => Package[$package_name_real],
       status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
+      require    => File[afs_init_script],
     }
   }
   # <Install & Config>

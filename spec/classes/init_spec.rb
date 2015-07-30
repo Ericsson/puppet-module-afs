@@ -55,16 +55,14 @@ describe 'afs' do
 
         it { should compile.with_all_deps }
 
-        # build package array for osfamily depended required packages
-        required_packages_array = Array.new
-        v[:package_name_default].each do |package|
-          required_packages_array.push('Package['+package+']')
-        end
-
         v[:package_name_default].each do |package|
           it {
             should contain_package(package).with({
               'ensure' => 'installed',
+              'before' => [
+                            'File[afs_init_script]',
+                            'File[afs_config_client]',
+                          ],
             })
           }
         end
@@ -86,7 +84,6 @@ describe 'afs' do
             'group'   => 'root',
             'mode'    => '0755',
             'source'  => "puppet:///modules/afs/#{v[:init_template_default]}",
-            'require' => required_packages_array,
           })
         }
 
@@ -119,7 +116,7 @@ describe 'afs' do
             'owner'   => 'root',
             'group'   => 'root',
             'mode'    => '0644',
-            'require' => required_packages_array | [ "Common::Mkdir_p[#{File.dirname(v[:config_client_path_default])}]" ],
+            'require' => "Common::Mkdir_p[#{File.dirname(v[:config_client_path_default])}]",
           })
         }
         it { should contain_file('afs_config_client').with_content(/^AFSD_ARGS=\"-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime\"$/) }
@@ -135,7 +132,7 @@ describe 'afs' do
             'hasstatus'  => 'false',
             'hasrestart' => 'false',
             'restart'    => '/bin/true',
-            'require'    => required_packages_array,
+            'require'    => 'File[afs_init_script]',
             'status'     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
           })
         }
@@ -308,7 +305,7 @@ describe 'afs' do
             'group'   => 'root',
             'mode'    => '0755',
             'content' => '#!/bin/sh\\n/sw/RedHat/afs_setserverprefs.sh',
-            'require' => required_packages_array,
+            'require' => 'File[afs_init_script]',
           })
         }
       end
@@ -336,7 +333,7 @@ describe 'afs' do
           'month'    => '2',
           'weekday'  => '4',
           'monthday' => '2',
-          'require'  => required_packages_array,
+          'require' => 'File[afs_init_script]',
         })
       }
     end
