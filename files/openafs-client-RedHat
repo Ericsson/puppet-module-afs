@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Copyright (c) 2015 AFS-Core Ericsson
-# Version v1.10, 2015-02-19
+# Version v1.11, 2015-08-10
 #
 # openafs-client	Start/Stop the OpenAFS Client
 #
@@ -172,20 +172,23 @@ check_kernelmodule() {
     make clean >> $KMOD_BUILDLOG 2>&1
     
     ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >> $KMOD_BUILDLOG 2>&1
-    make -j4 >> $KMOD_BUILDLOG 2>&1
-
-    [ ! -d /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/ ] && mkdir /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
-
-    if [ -f src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko ]; then
-      cp src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
-      ln /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/openafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/libafs.ko
+    make >> $KMOD_BUILDLOG 2>&1
+    if [ $? -eq 0 ]; then
+      [ ! -d /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/ ] && mkdir /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
+      
+      if [ -f src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko ]; then
+        cp src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
+        ln /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/openafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/libafs.ko
+      else
+        cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
+      fi
+      
+      /sbin/depmod -a
+      /sbin/modprobe $AFS_KERNEL_MODULE >> $KMOD_BUILDLOG 2>&1
+      RETVAL=$?
     else
-      cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
+      RETVAL=1
     fi
-
-    /sbin/depmod -a
-    /sbin/modprobe $AFS_KERNEL_MODULE >> $KMOD_BUILDLOG 2>&1
-    RETVAL=$?
     [ $RETVAL -eq 0 ] && rm -f $KMOD_BUILDLOG && echo -n "Build succeded!" && success "Build succeded!" && echo && return 0
 
     echo -n "Failed to build kernel module."
