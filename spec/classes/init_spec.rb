@@ -2,16 +2,27 @@ require 'spec_helper'
 describe 'afs' do
 
   platforms = {
-    'RedHat' =>
+    'RedHat5' =>
       { :osfamily                   => 'RedHat',
+        :operatingsystemmajrelease  => '5',
         :afs_config_path_default    => '/usr/vice/etc',
         :cache_path_default         => '/usr/vice/cache',
         :config_client_dkms_default => true,
         :config_client_path_default => '/etc/sysconfig/openafs-client',
         :init_script_default        => '/etc/init.d/openafs-client',
         :init_template_default      => 'openafs-client-RedHat',
-        :package_name_default       => [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel' ],
-
+        :package_name_default       => [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i386' ],
+      },
+    'RedHat6' =>
+      { :osfamily                   => 'RedHat',
+        :operatingsystemmajrelease  => '6',
+        :afs_config_path_default    => '/usr/vice/etc',
+        :cache_path_default         => '/usr/vice/cache',
+        :config_client_dkms_default => true,
+        :config_client_path_default => '/etc/sysconfig/openafs-client',
+        :init_script_default        => '/etc/init.d/openafs-client',
+        :init_template_default      => 'openafs-client-RedHat',
+        :package_name_default       => [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686' ],
       },
     'Suse' =>
       { :osfamily                   => 'Suse',
@@ -49,7 +60,8 @@ describe 'afs' do
     platforms.sort.each do |k,v|
       context "where osfamily is <#{v[:osfamily]}>" do
         let :facts do
-          { :osfamily          => v[:osfamily],
+          { :osfamily                  => v[:osfamily],
+            :operatingsystemmajrelease => v[:operatingsystemmajrelease],
           }
         end
 
@@ -280,12 +292,6 @@ describe 'afs' do
     let :facts do
       { :osfamily   => 'RedHat',
       }
-    end
-
-    # build package array for osfamily depended required packages
-    required_packages_array = Array.new
-    platforms['RedHat'][:package_name_default].each do |package|
-      required_packages_array.push('Package['+package+']')
     end
 
     ['hourly','daily','weekly','monthly'].each do |value|
