@@ -1,7 +1,7 @@
 #! /bin/sh
 #
 # Copyright (c) 2015 AFS-Core Ericsson
-# Version v1.10, 2015-08-10
+# Version v1.11, 2015-08-12
 #
 # System startup script for OpenAFS
 #
@@ -26,6 +26,8 @@ AFS_KERNEL_MODULE=libafs
 AFS=/afs
 DEFAULTCELL="sunrise.ericsson.se"
 SUIDCELLS=/etc/openafs/SuidCells
+LOCKFILE="/var/lock/`basename $0`"
+LOCKFD=99
 
 #test -x $DAEMON_BIN || exit 5
 
@@ -45,6 +47,21 @@ SUIDCELLS=/etc/openafs/SuidCells
 # Set the minimum required options for afsd if no options set in /etc/sysconfig/openafs-client
 AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb -nosettime"}
 UPDATE=${UPDATE:-"false"}
+
+# Lock 
+type flock 1>/dev/null 2>/dev/null
+if [ $? -eq 0 ]; then
+  _lock()             { flock -$1 $LOCKFD; }
+  _no_more_locking()  { _lock u; _lock xn && rm -f $LOCKFILE; }
+  _prepare_locking()  { eval "exec $LOCKFD>\"$LOCKFILE\""; trap _no_more_locking EXIT; }
+  
+  exlock_now()        { _lock xn; }  # obtain an exclusive lock immediately or fail
+  exlock()            { _lock x; }   # obtain an exclusive lock
+  shlock()            { _lock s; }   # obtain a shared lock
+  unlock()            { _lock u; }   # drop a lock
+  
+  _prepare_locking
+fi
 
 setsuid() {
   if [ -f $SUIDCELLS ]; then
@@ -150,6 +167,10 @@ check_kernelmodule() {
   RETVAL=$?
   [ $RETVAL -eq 0 ] && return 0 # Kernel module loaded, continue...
   echo -n "Attempting to recompile kernel module..."
+  type flock 1>/dev/null 2>/dev/null
+  if [ $? -eq 0 ]; then
+    exlock_now || { echo " -> Lock-file $LOCKFILE exists! Will exit now."; exit 1; }
+  fi
   KERNEL_VERSION=`uname -r`
   KMOD_BUILDLOG=/tmp/openafs-kmod-build-`date +%Y%m%d-%H%M`.log
   echo "Build log for OpenAFS module: `date`" > $KMOD_BUILDLOG
@@ -157,7 +178,7 @@ check_kernelmodule() {
     cd /usr/src/kernel-modules/openafs/libafs_tree
     make clean >> $KMOD_BUILDLOG 2>&1
     ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >> $KMOD_BUILDLOG 2>&1
-    make >> $KMOD_BUILDLOG 2>&1
+    make -j4 >> $KMOD_BUILDLOG 2>&1
     if [ $? -eq 0 ]; then
       MODULEDIR=/lib/modules/$KERNEL_VERSION/kernel/fs/openafs
       if [ -d $MODULEDIR ]; then # Clean out any occurance of old modules.

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Copyright (c) 2015 AFS-Core Ericsson
-# Version v1.11, 2015-08-10
+# Version v1.12, 2015-08-12
 #
 # openafs-client	Start/Stop the OpenAFS Client
 #
@@ -18,6 +18,8 @@ OPENAFS_VERSION=`rpm --queryformat '%{version}' -q openafs`
 OPENAFSDKMS=dkms-openafs
 DEFAULTCELL="sunrise.ericsson.se"
 SUIDCELLS=/usr/vice/etc/SuidCells
+LOCKFILE="/var/lock/`basename $0`"
+LOCKFD=99
 
 [ -f /etc/init.d/functions ] && . /etc/init.d/functions
 [ -f /etc/sysconfig/openafs-client ] && . /etc/sysconfig/openafs-client
@@ -26,6 +28,21 @@ SUIDCELLS=/usr/vice/etc/SuidCells
 AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb -nosettime"}
 UPDATE=${UPDATE:-"false"}
 DKMS=${DKMS:-"true"}
+
+# Lock 
+type flock 1>/dev/null 2>/dev/null
+if [ $? -eq 0 ]; then
+  _lock()             { flock -$1 $LOCKFD; }
+  _no_more_locking()  { _lock u; _lock xn && rm -f $LOCKFILE; }
+  _prepare_locking()  { eval "exec $LOCKFD>\"$LOCKFILE\""; trap _no_more_locking EXIT; }
+  
+  exlock_now()        { _lock xn; }  # obtain an exclusive lock immediately or fail
+  exlock()            { _lock x; }   # obtain an exclusive lock
+  shlock()            { _lock s; }   # obtain a shared lock
+  unlock()            { _lock u; }   # drop a lock
+  
+  _prepare_locking
+fi
 
 setsuid() {
   if [ -f $SUIDCELLS ]; then
@@ -159,6 +176,10 @@ check_kernelmodule() {
   echo
   echo -n $"Failed to load kernel module, attempting rebuild.."
   warning $"Failed to load kernel module, attempting rebuild.."
+  type flock 1>/dev/null 2>/dev/null
+  if [ $? -eq 0 ]; then
+    exlock_now || { echo " -> Lock-file $LOCKFILE exists! Will exit now."; exit 1; }
+  fi
   echo
 
   KERNEL_VERSION=`uname -r`
@@ -172,7 +193,7 @@ check_kernelmodule() {
     make clean >> $KMOD_BUILDLOG 2>&1
     
     ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >> $KMOD_BUILDLOG 2>&1
-    make >> $KMOD_BUILDLOG 2>&1
+    make -j4 >> $KMOD_BUILDLOG 2>&1
     if [ $? -eq 0 ]; then
       [ ! -d /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/ ] && mkdir /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
       
