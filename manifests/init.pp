@@ -41,7 +41,11 @@ class afs (
       $config_client_path_default = '/etc/sysconfig/openafs-client'
       $init_script_default        = '/etc/init.d/openafs-client'
       $init_template_default      = 'openafs-client-RedHat'
-      $package_name_default       = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel' ]
+      if $::operatingsystemmajrelease != '5' {
+        $package_name_default       = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686' ]
+      } else {
+        $package_name_default       = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i386' ]
+      }
     }
     'Suse': {
       $afs_config_path_default    = '/etc/openafs'
