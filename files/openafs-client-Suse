@@ -1,7 +1,7 @@
 #! /bin/sh
 #
 # Copyright (c) 2015 AFS-Core Ericsson
-# Version v1.11, 2015-08-12
+# Version v1.12, 2015-10-23
 #
 # System startup script for OpenAFS
 #
@@ -51,16 +51,19 @@ UPDATE=${UPDATE:-"false"}
 # Lock 
 type flock 1>/dev/null 2>/dev/null
 if [ $? -eq 0 ]; then
-  _lock()             { flock -$1 $LOCKFD; }
-  _no_more_locking()  { _lock u; _lock xn && rm -f $LOCKFILE; }
-  _prepare_locking()  { eval "exec $LOCKFD>\"$LOCKFILE\""; trap _no_more_locking EXIT; }
+  flock -x  1>/dev/null 2>/dev/null
+	if [ $? -ne 1 ]; then
+    _lock()             { flock -$1 $LOCKFD; }
+    _no_more_locking()  { _lock u; _lock xn && rm -f $LOCKFILE; }
+    _prepare_locking()  { eval "exec $LOCKFD>\"$LOCKFILE\""; trap _no_more_locking EXIT; }
   
-  exlock_now()        { _lock xn; }  # obtain an exclusive lock immediately or fail
-  exlock()            { _lock x; }   # obtain an exclusive lock
-  shlock()            { _lock s; }   # obtain a shared lock
-  unlock()            { _lock u; }   # drop a lock
+    exlock_now()        { _lock xn; }  # obtain an exclusive lock immediately or fail
+    exlock()            { _lock x; }   # obtain an exclusive lock
+    shlock()            { _lock s; }   # obtain a shared lock
+    unlock()            { _lock u; }   # drop a lock
   
-  _prepare_locking
+    _prepare_locking
+	fi
 fi
 
 setsuid() {
@@ -169,7 +172,10 @@ check_kernelmodule() {
   echo -n "Attempting to recompile kernel module..."
   type flock 1>/dev/null 2>/dev/null
   if [ $? -eq 0 ]; then
-    exlock_now || { echo " -> Lock-file $LOCKFILE exists! Will exit now."; exit 1; }
+	  flock -x  1>/dev/null 2>/dev/null
+    if [ $? -ne 1 ]; then
+      exlock_now || { echo " -> Lock-file $LOCKFILE exists! Will exit now."; exit 1; }
+		fi
   fi
   KERNEL_VERSION=`uname -r`
   KMOD_BUILDLOG=/tmp/openafs-kmod-build-`date +%Y%m%d-%H%M`.log
