@@ -52,7 +52,7 @@ UPDATE=${UPDATE:-"false"}
 type flock 1>/dev/null 2>/dev/null
 if [ $? -eq 0 ]; then
   flock -x  1>/dev/null 2>/dev/null
-	if [ $? -ne 1 ]; then
+  if [ $? -ne 1 ]; then
     _lock()             { flock -$1 $LOCKFD; }
     _no_more_locking()  { _lock u; _lock xn && rm -f $LOCKFILE; }
     _prepare_locking()  { eval "exec $LOCKFD>\"$LOCKFILE\""; trap _no_more_locking EXIT; }
@@ -63,7 +63,7 @@ if [ $? -eq 0 ]; then
     unlock()            { _lock u; }   # drop a lock
   
     _prepare_locking
-	fi
+  fi
 fi
 
 setsuid() {
@@ -172,10 +172,10 @@ check_kernelmodule() {
   echo -n "Attempting to recompile kernel module..."
   type flock 1>/dev/null 2>/dev/null
   if [ $? -eq 0 ]; then
-	  flock -x  1>/dev/null 2>/dev/null
+    flock -x  1>/dev/null 2>/dev/null
     if [ $? -ne 1 ]; then
       exlock_now || { echo " -> Lock-file $LOCKFILE exists! Will exit now."; exit 1; }
-		fi
+    fi
   fi
   KERNEL_VERSION=`uname -r`
   KMOD_BUILDLOG=/tmp/openafs-kmod-build-`date +%Y%m%d-%H%M`.log
