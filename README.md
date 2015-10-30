@@ -22,6 +22,7 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 
 # Version history #
+1.2.4 2015-10-30 updates Suse init script to v1.12
 1.2.3 2015-08-14 add libgcc (32bit) to RedHat package list for dependency reasons
                  updates Suse init script to v1.11
                  updates RedHat init script to v1.12
