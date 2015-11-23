@@ -58,7 +58,7 @@ describe 'afs' do
 
   describe 'with default values for parameters' do
     platforms.sort.each do |k,v|
-      context "where osfamily is <#{v[:osfamily]}>" do
+      context "where osfamily is <#{k}>" do
         let :facts do
           { :osfamily                  => v[:osfamily],
             :operatingsystemmajrelease => v[:operatingsystemmajrelease],
@@ -73,6 +73,7 @@ describe 'afs' do
               'ensure' => 'installed',
               'before' => [
                             'File[afs_init_script]',
+                            'File[afs_config_cacheinfo]',
                             'File[afs_config_client]',
                           ],
             })
@@ -96,6 +97,7 @@ describe 'afs' do
             'group'   => 'root',
             'mode'    => '0755',
             'source'  => "puppet:///modules/afs/#{v[:init_template_default]}",
+            'before'  => 'Service[afs_openafs_client_service]',
           })
         }
 
@@ -109,6 +111,7 @@ describe 'afs' do
             'mode'    => '0644',
             'content' => "/afs:#{v[:cache_path_default]}:1000000\n",
             'require' => "Common::Mkdir_p[#{v[:afs_config_path_default]}]",
+            'before'  => 'Service[afs_openafs_client_service]',
           })
         }
 
@@ -129,6 +132,7 @@ describe 'afs' do
             'group'   => 'root',
             'mode'    => '0644',
             'require' => "Common::Mkdir_p[#{File.dirname(v[:config_client_path_default])}]",
+            'before'  => 'Service[afs_openafs_client_service]',
           })
         }
         it { should contain_file('afs_config_client').with_content(/^AFSD_ARGS=\"-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime\"$/) }
@@ -144,8 +148,12 @@ describe 'afs' do
             'hasstatus'  => 'false',
             'hasrestart' => 'false',
             'restart'    => '/bin/true',
-            'require'    => 'File[afs_init_script]',
             'status'     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
+            'require'    => [
+                              'File[afs_init_script]',
+                              'File[afs_config_cacheinfo]',
+                              'File[afs_config_client]',
+                            ],
           })
         }
       end
@@ -158,9 +166,21 @@ describe 'afs' do
           :is_virtual => 'true',
         }
       end
+      let :params do
+        { :afs_suidcells    => 'sunset.github.com',
+          :afs_cell         => 'sunset.github.com',
+          :afs_cellserverdb => '>sunset.github.com\t#Sunset',
+        }
+      end
+      it { should contain_file('afs_init_script'        ).with_before(nil) }
+      it { should contain_file('afs_config_cacheinfo'   ).with_before(nil) }
+      it { should contain_file('afs_config_client'      ).with_before(nil) }
+      it { should contain_file('afs_config_suidcells'   ).with_before(nil) }
+      it { should contain_file('afs_config_thiscell'    ).with_before(nil) }
+      it { should contain_file('afs_config_cellserverdb').with_before(nil) }
+      it { should_not contain_service('afs_openafs_client_service') }
       it { should_not contain_cron('afs_cron_job') }
       it { should_not contain_file('afs_cron_job') }
-      it { should_not contain_service('afs_openafs_client_service') }
     end
 
     context "where osfamily is <Suse> and operatingsystemrelease is <12>" do
@@ -176,6 +196,7 @@ describe 'afs' do
           'path'   => '/etc/modprobe.d/10-unsupported-modules.conf',
           'line'   => 'allow_unsupported_modules 1',
           'match'  => '^allow_unsupported_modules 0$',
+          'before' => 'Service[afs_openafs_client_service]',
         })
       }
     end
@@ -204,6 +225,7 @@ describe 'afs' do
           'group'  => 'root',
           'mode'   => '0644',
           'require' =>'Common::Mkdir_p[/usr/vice/etc]',
+          'before'  => 'Service[afs_openafs_client_service]',
         })
       }
       it { should contain_file('afs_config_suidcells').with_content(/^sunset.github.com$/) }
@@ -219,6 +241,7 @@ describe 'afs' do
           'group'  => 'root',
           'mode'   => '0644',
           'require' =>'Common::Mkdir_p[/usr/vice/etc]',
+          'before'  => 'Service[afs_openafs_client_service]',
         })
       }
       it { should contain_file('afs_config_thiscell').with_content(/^sunset.github.com$/) }
@@ -234,6 +257,7 @@ describe 'afs' do
           'group'  => 'root',
           'mode'   => '0644',
           'require' =>'Common::Mkdir_p[/usr/vice/etc]',
+          'before'  => 'Service[afs_openafs_client_service]',
         })
       }
       it { should contain_file('afs_config_cellserverdb').with_content(/^>sunset.github.com\\t#Sunset$/) }

@@ -304,15 +304,19 @@ class afs (
     }
   }
 
+  $config_client_dir_real = dirname($config_client_path_real)
+
   package { $package_name_real:
     ensure => installed,
     before => [
                 File[afs_init_script],
+                File[afs_config_cacheinfo],
                 File[afs_config_client],
               ],
   }
 
   common::mkdir_p { $afs_config_path_real: }
+  common::mkdir_p { $config_client_dir_real: }
 
   if ($::osfamily == 'Suse' and $::operatingsystemrelease == '12') {
     file_line { 'allow_unsupported_modules':
@@ -320,6 +324,7 @@ class afs (
       path   => '/etc/modprobe.d/10-unsupported-modules.conf',
       line   => 'allow_unsupported_modules 1',
       match  => '^allow_unsupported_modules 0$',
+      before => Service[afs_openafs_client_service],
     }
   }
 
@@ -341,10 +346,6 @@ class afs (
     content => template('afs/cacheinfo.erb'),
     require => Common::Mkdir_p[$afs_config_path_real],
   }
-
-  $config_client_dir_real = dirname($config_client_path_real)
-
-  common::mkdir_p { $config_client_dir_real: }
 
   file { 'afs_config_client' :
     ensure  => file,
@@ -392,8 +393,36 @@ class afs (
     }
   }
 
-  # Solaris containers must not start the setserverprefs cronjob.
+  if $service_provider_real != undef {
+    Service {
+      provider => $service_provider_real,
+    }
+  }
+
+  # Solaris containers must not start the service nor add setserverprefs cronjob.
   if $solaris_container_real != true {
+    # add dependency to this service for all file resources
+    File {
+      before => Service[afs_openafs_client_service],
+    }
+
+    # THIS SERVICE SHOULD NOT BE RESTARTED
+    # Restarting it may cause AFS module and kernel problems.
+    service { 'afs_openafs_client_service':
+      ensure     => 'running',
+      enable     => true,
+      name       => 'openafs-client',
+      hasstatus  => false,
+      hasrestart => false,
+      restart    => '/bin/true',
+      status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
+      require    => [
+                      File[afs_init_script],
+                      File[afs_config_cacheinfo],
+                      File[afs_config_client],
+                    ],
+    }
+
     if ($afs_cron_job_content_real != undef) and ($afs_cron_job_interval_real != undef) {
       if $afs_cron_job_interval_real == 'specific' {
         cron { 'afs_cron_job':
@@ -419,28 +448,6 @@ class afs (
           require => File[afs_init_script],
         }
       }
-    }
-  }
-
-  if $service_provider_real != undef {
-    Service {
-      provider => $service_provider_real,
-    }
-  }
-
-  # THIS SERVICE SHOULD NOT BE RESTARTED
-  # Restarting it may cause AFS module and kernel problems.
-  # Solaris containers must not start the service.
-  if $solaris_container_real != true {
-    service { 'afs_openafs_client_service':
-      ensure     => 'running',
-      enable     => true,
-      name       => 'openafs-client',
-      hasstatus  => false,
-      hasrestart => false,
-      restart    => '/bin/true',
-      status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
-      require    => File[afs_init_script],
     }
   }
   # <Install & Config>
