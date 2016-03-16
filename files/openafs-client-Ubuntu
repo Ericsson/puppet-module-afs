@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Copyright (c) 2015 AFS-Core Ericsson
-# Version v1.2, 2015-02-19
+# Copyright (c) 2016 AFS-Core Ericsson
+# Version v1.4, 2016-03-11
 #
 ### BEGIN INIT INFO
 # Provides:             openafs-client
@@ -26,6 +26,7 @@
 # directory or online at http://www.openafs.org/dl/license10.html
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
+export PATH
 
 CACHEINFO=${CACHEINFO:-/etc/openafs/cacheinfo}
 MODULEROOT=${MODULEROOT:-/lib/modules/`uname -r`}
@@ -35,6 +36,8 @@ AFS_KERNEL_MODULE=libafs
 OPENAFSDKMS=openafs-modules-dkms
 DEFAULTCELL="sunrise.ericsson.se"
 SUIDCELLS=/etc/openafs/SuidCells
+LOCKFILE="/var/lock/`basename $0`"
+LOCKFD=99
 
 # Exit if the package is not installed.
 [ -x /sbin/afsd ] || exit 0
@@ -47,13 +50,40 @@ exec </dev/null
 
 # Gather up options and post startup script name, if present
 if [ -f /etc/default/openafs-client ]; then
-    . /etc/default/openafs-client
+  . /etc/default/openafs-client
 fi
 
 # Set the minimum required options for afsd if no options set in /etc/openafs/sysconfig.openafs-client
 AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb -nosettime"}
 UPDATE=${UPDATE:-"false"}
 DKMS=${DKMS:-"true"}
+
+noroot_check() {
+  if [ "`whoami | awk '{print $1}' | cut -f2 -d\!`" != "root" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Lock
+lock_routine() {
+  if { flock -h; } >/dev/null 2>&1; then
+    _lock()             { flock -$1 $LOCKFD; }
+    _no_more_locking()  { _lock u; _lock xn && rm -f $LOCKFILE; }
+    _prepare_locking()  { eval "exec $LOCKFD>\"$LOCKFILE\""; trap _no_more_locking EXIT; }
+    
+    exlock_now()        { _lock xn; }  # obtain an exclusive lock immediately or fail
+    exlock()            { _lock x; }   # obtain an exclusive lock
+    shlock()            { _lock s; }   # obtain a shared lock
+    unlock()            { _lock u; }   # drop a lock
+    
+    _prepare_locking
+    return 0
+  else
+    return 1
+  fi
+}
 
 setsuid() {
   if [ -f $SUIDCELLS ]; then
@@ -120,12 +150,11 @@ setsysname() {
   esac
 
   # Sysname list.  The order here is from specific to general, with a
-  # fallback to the compiled-in value from /usr/bin/sys.  This will be
+  # fallback to the compiled-in value from sys.  This will be
   # used as the sysname search path.
-  type sys 1>/dev/null 2>/dev/null
-  if [ $? -eq 0 ]; then
+  if { SYS=`sys`; } >/dev/null 2>&1; then
     if [ -n "$_VER" ]; then
-       SYSNAMELIST="${_ARCH}_${_DIST}${_VER} $(sys)"
+       SYSNAMELIST="${_ARCH}_${_DIST}${_VER} $SYS"
     fi
   fi
 
@@ -156,26 +185,39 @@ dkms_check() {
 
 check_kernelmodule() {
   if dkms_check ; then
-    dkms status -m $AFS_KERNEL_MODULE -k `uname -r` | grep -w 'installed-weak' > /dev/null
-    if [ $? -eq 0 ]; then
-      echo
-      echo "Weak module detected, will be removed.."
+    # dkms status -m $AFS_KERNEL_MODULE -k `uname -r` | grep -w 'installed-weak' > /dev/null
+    # if [ $? -eq 0 ]; then
+      # echo
+      # echo "Weak module detected, will be removed.."
       # if [ -h /lib/modules/`uname -r`/weak-updates/${AFS_KERNEL_MODULE}.ko ]; then
         # rm -fv /lib/modules/`uname -r`/weak-updates/${AFS_KERNEL_MODULE}.ko
       # fi
+      # echo
+      # echo "DKMS stuff ..."
+      # dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver `uname -r`
+    # fi
+    dkms status -m $AFS_KERNEL_MODULE -k `uname -r` | grep ': installed$' > /dev/null
+    if [ $? -ne 0 ]; then
       echo
-      echo "DKMS stuff ..."
-      dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver `uname -r`
+      echo "No kernel-module detected for $AFS_KERNEL_MODULE and kernel `uname -r` .."
+      if { AFSVERSION=`dpkg-query --showformat='${VERSION}' --show openafs-client | sed -e 's/-.*//'`; } >/dev/null 2>&1; then
+        echo "DKMS stuff ..."
+        dkms add -m $AFS_KERNEL_MODULE -v $AFSVERSION --kernelver `uname -r`
+        dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver `uname -r`
+      fi
     fi
     return 0
   fi
 
-  /sbin/modprobe $AFS_KERNEL_MODULE > /dev/null 2>&1
+  modprobe $AFS_KERNEL_MODULE > /dev/null 2>&1
   RETVAL=$?
   [ $RETVAL -eq 0 ] && return 0 # Kernel module loaded, continue...
 
   echo
   echo -n $"Failed to load kernel module, attempting rebuild.."
+  if lock_routine ; then
+    exlock_now || { echo; echo " -> Lock-file $LOCKFILE exists! Will exit now."; exit 1; }
+  fi
   echo
 
   KERNEL_VERSION=`uname -r`
@@ -204,8 +246,8 @@ check_kernelmodule() {
         cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
       fi
 
-      /sbin/depmod -a
-      /sbin/modprobe $AFS_KERNEL_MODULE >> $KMOD_BUILDLOG 2>&1
+      depmod -a
+      modprobe $AFS_KERNEL_MODULE >> $KMOD_BUILDLOG 2>&1
       RETVAL=$?
       [ $RETVAL -eq 0 ] && rm -f $KMOD_BUILDLOG && echo -n "Build succeeded!" && echo && return 0
 
@@ -231,7 +273,7 @@ rm_wrong_module() {
     return 0
   fi
 
-  module="`/sbin/modinfo -F filename $AFS_KERNEL_MODULE 2> /dev/null`"
+  module="`modinfo -F filename $AFS_KERNEL_MODULE 2> /dev/null`"
   if [ -f "$module" ] ; then
     mod_version=`strings $module | grep OpenAFS | awk '{print $3}'`
     pkg_version=`fs --version | awk '{print $2}'`
@@ -280,12 +322,20 @@ is_loading_disabled() {
 # loading whether the module is listed in the module dependencies so that we
 # can exit with a 0 status in that case.
 load_client() {
+  if [ "$DKMS" == "true" ]; then
+    AFS_KERNEL_MODULE=openafs
+    # Check if no dkms session is running already
+    if { pgrep -f "dkms .* -m $AFS_KERNEL_MODULE"; } >/dev/null 2>&1; then
+      echo "A dkms-session is running to install/remove $AFS_KERNEL_MODULE, will exit now."
+      exit 1
+    fi
+  fi
   if check_kernelmodule; then
     sawdep=0
     if grep -q "$AFS_KERNEL_MODULE" "$MODULEROOT/modules.dep" ; then
         sawdep=1
     fi
-    LOADED=`/sbin/lsmod | fgrep "$AFS_KERNEL_MODULE"`
+    LOADED=`lsmod | fgrep "$AFS_KERNEL_MODULE"`
     if [ -z "$LOADED" ] ; then
       if dkms_check ; then
         modprobe $AFS_KERNEL_MODULE
@@ -336,7 +386,7 @@ kill_afs() {
   signal=$1
   mount=`grep ^'AFS ' /etc/mtab | awk '{ print $2 }'`
   if [ -n "$mount" ] ; then
-    pids=`/usr/bin/lsof -Fp $mount | sed 's/p//'`
+    pids=`lsof -Fp $mount | sed 's/p//'`
     if [ -n "$pids" ] ; then
       kill -$signal $pids > /dev/null 2>&1
       sleep 1
@@ -350,7 +400,7 @@ kill_afs() {
 #
 # Warns and does nothing if lsof is not installed.
 kill_all_afs() {
-  if [ -x /usr/bin/lsof ] ; then
+	if { lsof -h; } >/dev/null 2>&1; then
     echo -n "Killing processes with AFS files open: "
     kill_afs HUP
     kill_afs TERM
@@ -358,13 +408,16 @@ kill_all_afs() {
     kill_afs KILL
     echo "done."
   else
-    echo '/usr/bin/lsof not found, not killing processes' >&2
+    echo 'lsof not found, not killing processes' >&2
   fi
 }
 
-
 case "$1" in 
 start)
+  if noroot_check; then
+    echo "Script has to be run as root"
+    exit 1
+  fi
   if test -x /sbin/afsd ; then
     echo -n "Starting AFS services:"
     rm_wrong_module
@@ -379,6 +432,10 @@ start)
   ;;
 
 stop)
+  if noroot_check; then
+    echo "Script has to be run as root"
+    exit 1
+  fi
   if is_loading_disabled ; then
     echo "Module loading disabled, cannot stop AFS" >&2
     exit 1
@@ -390,22 +447,26 @@ stop)
   fi
   if pidof /usr/sbin/afsd >/dev/null || pidof /sbin/afsd >/dev/null ; then
     afsd -shutdown
-	fi
+  fi
 
   # If running with the -rmtsys option, afsd doesn't kill the rmtsys helper
   # on afsd -shutdown.  Run start-stop-daemon to make sure that everything
   # is dead.
   start-stop-daemon --stop --quiet --name afsd
 
-  AFS_KERNEL_MODULE=`/sbin/lsmod | awk 'BEGIN { FS = " " } /afs/ { print $1 }'`
+  AFS_KERNEL_MODULE=`lsmod | awk 'BEGIN { FS = " " } /afs/ { print $1 }'`
   if [ -n "$AFS_KERNEL_MODULE" ] ; then
-    /sbin/rmmod $AFS_KERNEL_MODULE
+    rmmod $AFS_KERNEL_MODULE
     echo -n " openafs"
   fi
   echo "."
   ;;
 
 stop-force)
+  if noroot_check; then
+    echo "Script has to be run as root"
+    exit 1
+  fi
   if is_loading_disabled ; then
     echo "Module loading disabled, cannot stop AFS" >&2
     exit 1
@@ -419,16 +480,16 @@ stop-force)
 
   if pidof /usr/sbin/afsd >/dev/null || pidof /sbin/afsd >/dev/null ; then
     afsd -shutdown
-	 fi
+   fi
 
   # If running with the -rmtsys option, afsd doesn't kill the rmtsys helper
   # on afsd -shutdown.  Run start-stop-daemon to make sure that everything
   # is dead.
   start-stop-daemon --stop --quiet --name afsd
 
-  AFS_KERNEL_MODULE=`/sbin/lsmod | awk 'BEGIN { FS = " " } /afs/ { print $1 }'`
+  AFS_KERNEL_MODULE=`lsmod | awk 'BEGIN { FS = " " } /afs/ { print $1 }'`
   if [ -n "$AFS_KERNEL_MODULE" ] ; then
-    /sbin/rmmod $AFS_KERNEL_MODULE
+    rmmod $AFS_KERNEL_MODULE
     echo -n " openafs"
   fi
   echo "."
@@ -441,7 +502,7 @@ restart|force-reload)
 
 check)
   check
-	;;
+  ;;
 
 *)
   echo Usage: \
