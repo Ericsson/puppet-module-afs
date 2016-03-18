@@ -22,29 +22,34 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 
 # Version history #
-1.2.4 2015-10-30 updates Suse init script to v1.12
-1.2.3 2015-08-14 add libgcc (32bit) to RedHat package list for dependency reasons
-                 updates Suse init script to v1.11
-                 updates RedHat init script to v1.12
-1.2.2 2015-07-30 add glibc-devel to RedHat package list for dependency reasons
-                 support for Puppet v4, refactor dependencies
-1.2.1 2015-03-31 updates Suse init script to v1.9
-1.2.0 2015-03-30 add support for SLES 12
-1.1.2 2015-03-20 re-enable custom fact (afs_version) for RPMs
-1.1.1 2015-03-20 add Ubuntu support to the custom fact (afs_version)
-1.1.0 2015-02-23 add Ubuntu support for 12.04/14.04
-                 updates RedHat init script to 1.10
-                 updates Suse init script to v1.8
-                 updates Solairs init script to v1.8
-                 updates Ubuntu init script to v1.2
-1.0.3 2015-02-13 deprecate type() as preparation for Puppet v4. Needs stdlib >= 4.2 now
-1.0.2 2014-12-12 updates RedHat init script to v1.7
-                 updates Suse init script to v1.5
-                 updates Solairs init script to v1.5
-1.0.1 2014-11-20 updates RedHat init script to v1.6
-                 updates Suse init script to v1.4
-                 small spec test fix
-1.0.0 2014-11-13 initial release
+1.2.5 2016-03-18 Enhance dependency handling
+                 Updates RedHat init script to v1.1.5
+                 Updates Suse init script to v1.1.5
+                 Updates Solaris init script to v1.9
+                 Updates Ubuntu init script to v1.4
+1.2.4 2015-10-30 Updates Suse init script to v1.12
+1.2.3 2015-08-14 Add libgcc (32bit) to RedHat package list for dependency reasons
+                 Updates Suse init script to v1.11
+                 Updates RedHat init script to v1.12
+1.2.2 2015-07-30 Add glibc-devel to RedHat package list for dependency reasons
+                 Support for Puppet v4, refactor dependencies
+1.2.1 2015-03-31 Updates Suse init script to v1.9
+1.2.0 2015-03-30 Add support for SLES 12
+1.1.2 2015-03-20 Re-enable custom fact (afs_version) for RPMs
+1.1.1 2015-03-20 Add Ubuntu support to the custom fact (afs_version)
+1.1.0 2015-02-23 Add Ubuntu support for 12.04/14.04
+                 Updates RedHat init script to 1.10
+                 Updates Suse init script to v1.8
+                 Updates Solairs init script to v1.8
+                 Updates Ubuntu init script to v1.2
+1.0.3 2015-02-13 Deprecate type() as preparation for Puppet v4. Needs stdlib >= 4.2 now
+1.0.2 2014-12-12 Updates RedHat init script to v1.7
+                 Updates Suse init script to v1.5
+                 Updates Solairs init script to v1.5
+1.0.1 2014-11-20 Updates RedHat init script to v1.6
+                 Updates Suse init script to v1.4
+                 Small spec test fix
+1.0.0 2014-11-13 Initial release
 
 # Parameters #
 
