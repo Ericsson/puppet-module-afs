@@ -1,6 +1,6 @@
 {
   "name": "Phil-Friderici-afs",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "author": "Phil-Friderici",
   "summary": "Manage OpenAFS",
   "license": "Apache-2.0",
@@ -38,6 +38,12 @@
         "5",
         "6",
         "7"
+      ]
+    },
+    {
+      "operatingsystem": "Solaris",
+      "operatingsystemrelease": [
+        "10"
       ]
     },
     {

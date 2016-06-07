@@ -22,6 +22,8 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 
 # Version history #
+1.2.6 2016-06-07 Updates Solaris init script to v1.10
+                 Fixes issues with STRICT_VARIABLES on Puppet 4.5
 1.2.5 2016-03-18 Enhance dependency handling
                  Updates RedHat init script to v1.1.5
                  Updates Suse init script to v1.1.5
