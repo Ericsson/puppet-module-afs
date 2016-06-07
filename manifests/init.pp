@@ -35,6 +35,7 @@ class afs (
   # Set $os_defaults_missing to true for unspecified osfamilies
   case $::osfamily {
     'RedHat': {
+      $os_defaults_missing        = false
       $afs_config_path_default    = '/usr/vice/etc'
       $cache_path_default         = '/usr/vice/cache'
       $config_client_dkms_default = true
@@ -48,6 +49,7 @@ class afs (
       }
     }
     'Suse': {
+      $os_defaults_missing        = false
       $afs_config_path_default    = '/etc/openafs'
       $cache_path_default         = '/var/cache/openafs'
       $config_client_dkms_default = false
@@ -57,6 +59,7 @@ class afs (
       $package_name_default       = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit' ]
     }
     'Solaris': {
+      $os_defaults_missing        = false
       $afs_config_path_default    = '/usr/vice/etc'
       $cache_path_default         = '/usr/vice/cache'
       $config_client_dkms_default = false
@@ -66,6 +69,7 @@ class afs (
       $package_name_default       = [ 'EISopenafs' ]
     }
     'Debian': {
+      $os_defaults_missing        = false
       $afs_config_path_default    = '/etc/openafs'
       $cache_path_default         = '/var/cache/openafs'
       $config_client_dkms_default = true
@@ -193,6 +197,9 @@ class afs (
 
   if ($::osfamily == 'Solaris') and ($is_virtual_bool == true) and ($::virtual == 'zone') {
     $solaris_container_real = true
+  }
+  else {
+    $solaris_container_real = false
   }
 
   # </assign variables>

@@ -4,7 +4,7 @@ describe 'afs' do
   platforms = {
     'RedHat5' =>
       { :osfamily                   => 'RedHat',
-        :operatingsystemmajrelease  => '5',
+        :osrelease                  => '5',
         :afs_config_path_default    => '/usr/vice/etc',
         :cache_path_default         => '/usr/vice/cache',
         :config_client_dkms_default => true,
@@ -15,7 +15,7 @@ describe 'afs' do
       },
     'RedHat6' =>
       { :osfamily                   => 'RedHat',
-        :operatingsystemmajrelease  => '6',
+        :osrelease                  => '6',
         :afs_config_path_default    => '/usr/vice/etc',
         :cache_path_default         => '/usr/vice/cache',
         :config_client_dkms_default => true,
@@ -26,6 +26,7 @@ describe 'afs' do
       },
     'Suse' =>
       { :osfamily                   => 'Suse',
+        :osrelease                  => '11',
         :afs_config_path_default    => '/etc/openafs',
         :cache_path_default         => '/var/cache/openafs',
         :config_client_dkms_default => false,
@@ -36,6 +37,7 @@ describe 'afs' do
       },
     'Solaris' =>
       { :osfamily                   => 'Solaris',
+        :osrelease                  => '10',
         :afs_config_path_default    => '/usr/vice/etc',
         :cache_path_default         => '/usr/vice/cache',
         :config_client_dkms_default => false,
@@ -46,6 +48,7 @@ describe 'afs' do
       },
     'Ubuntu' =>
       { :osfamily                   => 'Debian',
+        :osrelease                  => '12',
         :afs_config_path_default    => '/etc/openafs',
         :cache_path_default         => '/var/cache/openafs',
         :config_client_dkms_default => true,
@@ -61,7 +64,10 @@ describe 'afs' do
       context "where osfamily is <#{k}>" do
         let :facts do
           { :osfamily                  => v[:osfamily],
-            :operatingsystemmajrelease => v[:operatingsystemmajrelease],
+            :operatingsystemmajrelease => v[:osrelease],
+            :operatingsystemrelease    => "#{v[:osrelease]}.0",
+            :is_virtual                => nil,
+            :virtual                   => nil,
           }
         end
 
@@ -187,6 +193,7 @@ describe 'afs' do
       let :facts do
         { :osfamily               => 'Suse',
           :operatingsystemrelease => '12',
+          :is_virtual             => nil,
         }
       end
 
@@ -205,7 +212,9 @@ describe 'afs' do
 
   describe "with optional parameters set" do
     let :facts do
-      { :osfamily   => 'RedHat',
+      { :osfamily                  => 'RedHat',
+        :operatingsystemmajrelease => '7',
+        :is_virtual                => nil,
       }
     end
     let :params do
@@ -267,6 +276,8 @@ describe 'afs' do
   describe "with Solaris specific parameters set" do
     let :facts do
       { :osfamily   => 'Solaris',
+        :is_virtual => nil,
+        :virtual    => nil,
       }
     end
     let :params do
@@ -314,7 +325,9 @@ describe 'afs' do
 
   describe "with cronjob" do
     let :facts do
-      { :osfamily   => 'RedHat',
+      { :osfamily                  => 'RedHat',
+        :is_virtual                => nil,
+        :operatingsystemmajrelease => '7',
       }
     end
 
@@ -371,7 +384,9 @@ describe 'afs' do
 
   describe "with symlink" do
     let :facts do
-      { :osfamily   => 'RedHat',
+      { :osfamily                  => 'RedHat',
+        :operatingsystemmajrelease => '7',
+        :is_virtual                => nil,
       }
     end
     let :params do
