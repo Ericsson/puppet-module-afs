@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (c) 2016 AFS-Core Ericsson
-# Version v1.9, 2016-03-11
+# Version v1.10, 2016-06-06
 #
 # openafs-client  Start/Stop the OpenAFS Client
 # rc script for AFS on Solaris 8/9/10/11 or OpenSolaris-based platforms
@@ -27,14 +27,6 @@ AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb -nosettime"}
 # Need the commands pgrep, awk, fs
 PATH=/sbin:/bin:/usr/bin:/usr/sbin:/usr/proc/bin:/usr/afsws/bin:/usr/afsws/etc:/usr/afs/bin:/usr/afs/etc:/opt/afssw/bin:/opt/afssw/etc:/usr/afsw/bin:/usr/afsw/sbin:/usr/afsw/etc:/usr/vice/bin:/usr/vice/etc
 export PATH
-
-noroot_check() {
-  if [ "`whoami | awk '{print $1}' | cut -f2 -d\!`" != "root" ]; then
-    return 0
-  else
-    return 1
-  fi
-}
 
 setsuid() {
   if [ -f $SUIDCELLS ]; then
@@ -81,10 +73,6 @@ issol11() {
 
 case $1 in
   'start')
-	  if noroot_check; then
-	    echo "Script has to be run as root"
-	    exit 1
-	  fi
     # Not starting afsd on containers (non global zone)
     if uname -v | grep Virtual >/dev/null || { zonename; } 2>/dev/null | fgrep -vx global >/dev/null; then
       echo "Solaris Non-Global Zone: afsd will not start and is not needed !"
@@ -237,10 +225,6 @@ case $1 in
     # Stop the AFS client
     # Note that the afsd processes cannot be killed
     #
-		if noroot_check; then
-		  echo "Script has to be run as root"
-		  exit 1
-		fi
     echo "Stopping openafs-client: "
     if chkafsd; then
       umount $AFS
