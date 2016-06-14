@@ -341,7 +341,7 @@ class afs (
     owner  => 'root',
     group  => 'root',
     mode   => '0755',
-    source => "puppet:///modules/afs/${init_template_real}",
+    source => "puppet:///modules/afs/${init_template_real}", # lint:ignore:fileserver
   }
 
   file { 'afs_config_cacheinfo' :
