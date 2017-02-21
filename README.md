@@ -22,37 +22,45 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 
 # Version history #
-1.3.0 2017-02-20 Support Puppet up to 4.9 and Ruby 2.3.1
-1.2.6 2016-06-07 Updates Solaris init script to v1.10
-                 Fixes issues with STRICT_VARIABLES on Puppet 4.5
-1.2.5 2016-03-18 Enhance dependency handling
-                 Updates RedHat init script to v1.1.5
-                 Updates Suse init script to v1.1.5
-                 Updates Solaris init script to v1.9
-                 Updates Ubuntu init script to v1.4
-1.2.4 2015-10-30 Updates Suse init script to v1.12
-1.2.3 2015-08-14 Add libgcc (32bit) to RedHat package list for dependency reasons
-                 Updates Suse init script to v1.11
-                 Updates RedHat init script to v1.12
-1.2.2 2015-07-30 Add glibc-devel to RedHat package list for dependency reasons
-                 Support for Puppet v4, refactor dependencies
-1.2.1 2015-03-31 Updates Suse init script to v1.9
-1.2.0 2015-03-30 Add support for SLES 12
-1.1.2 2015-03-20 Re-enable custom fact (afs_version) for RPMs
-1.1.1 2015-03-20 Add Ubuntu support to the custom fact (afs_version)
-1.1.0 2015-02-23 Add Ubuntu support for 12.04/14.04
-                 Updates RedHat init script to 1.10
-                 Updates Suse init script to v1.8
-                 Updates Solairs init script to v1.8
-                 Updates Ubuntu init script to v1.2
-1.0.3 2015-02-13 Deprecate type() as preparation for Puppet v4. Needs stdlib >= 4.2 now
-1.0.2 2014-12-12 Updates RedHat init script to v1.7
-                 Updates Suse init script to v1.5
-                 Updates Solairs init script to v1.5
-1.0.1 2014-11-20 Updates RedHat init script to v1.6
-                 Updates Suse init script to v1.4
-                 Small spec test fix
-1.0.0 2014-11-13 Initial release
+* 1.3.1 2017-02-21 Fix fact using wrong redirection
+* 1.3.0 2017-02-20 Support Puppet up to 4.9 and Ruby 2.3.1
+* 1.2.6 2016-06-07
+  * Updates Solaris init script to v1.10
+  * Fixes issues with STRICT_VARIABLES on Puppet 4.5
+* 1.2.5 2016-03-18 Update init scripts
+  * Enhance dependency handling
+  * Updates RedHat init script to v1.1.5
+  * Updates Suse init script to v1.1.5
+  * Updates Solaris init script to v1.9
+  * Updates Ubuntu init script to v1.4
+* 1.2.4 2015-10-30 Updates Suse init script to v1.12
+* 1.2.3 2015-08-14 Update init scripts
+  * Add libgcc (32bit) to RedHat package list for dependency reasons
+  * Updates Suse init script to v1.11
+  * Updates RedHat init script to v1.12
+* 1.2.2 2015-07-30
+  * Add glibc-devel to RedHat package list for dependency reasons
+  * Support for Puppet v4, refactor dependencies
+* 1.2.1 2015-03-31 Updates Suse init script to v1.9
+* 1.2.0 2015-03-30 Add support for SLES 12
+* 1.1.2 2015-03-20 Re-enable custom fact (afs_version) for RPMs
+* 1.1.1 2015-03-20 Add Ubuntu support to the custom fact (afs_version)
+* 1.1.0 2015-02-23 Update init scripts
+  * Add Ubuntu support for 12.04/14.04
+  * Updates RedHat init script to 1.10
+  * Updates Suse init script to v1.8
+  * Updates Solairs init script to v1.8
+  * Updates Ubuntu init script to v1.2
+* 1.0.3 2015-02-13 Deprecate type() as preparation for Puppet v4. Needs stdlib >= 4.2 now
+* 1.0.2 2014-12-12 Update init scripts
+  * Updates RedHat init script to v1.7
+  * Updates Suse init script to v1.5
+  * Updates Solairs init script to v1.5
+* 1.0.1 2014-11-20 Update init scripts
+  * Updates RedHat init script to v1.6
+  * Updates Suse init script to v1.4
+  * Small spec test fix
+* 1.0.0 2014-11-13 Initial release
 
 # Parameters #
 
