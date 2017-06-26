@@ -1,7 +1,7 @@
 #! /bin/sh
 #
-# Copyright (c) 2016 AFS-Core Ericsson
-# Version v1.15, 2016-03-11
+# Copyright (c) 2017 AFS-Core Ericsson
+# Version v1.16, 2017-06-20
 #
 # System startup script for OpenAFS
 #
@@ -24,6 +24,7 @@ SUPPORTS_HUP="no"
 DAEMON_BIN=/usr/sbin/afsd
 AFS_KERNEL_MODULE=libafs
 AFS=/afs
+CACHEDIR=/var/cache/openafs
 DEFAULTCELL="sunrise.ericsson.se"
 SUIDCELLS=/etc/openafs/SuidCells
 LOCKFILE="/var/lock/`basename $0`"
@@ -50,6 +51,7 @@ export PATH
 # Set the minimum required options for afsd if no options set in /etc/sysconfig/openafs-client
 AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb -nosettime"}
 UPDATE=${UPDATE:-"false"}
+CLEANCACHE=${CLEANCACHE:-"false"}
 
 noroot_check() {
   if [ "`whoami | awk '{print $1}' | cut -f2 -d\!`" != "root" ]; then
@@ -255,8 +257,15 @@ package_update() {
         ZYPPEROPTS=""
       fi
       zypper --no-gpg-checks $ZYPPEROPTS -n in openafs openafs-docs openafs-krb5-mit openafs-client openafs-kernel-source 2>/dev/null
-      if [ -d "/var/cache/openafs" ] ; then
-        rm -rf /var/cache/openafs/*
+      if [ "$CLEANCACHE" != "true" ] ; then
+        if [ "${CACHEDIR}" == "/usr/vice/cache" -o "${CACHEDIR}" == "/var/cache/openafs" ]; then
+          if [ -d ${CACHEDIR} ]; then
+            echo "Cleaning up cache area ${CACHEDIR}/ ..."
+            rm -rf ${CACHEDIR}/*
+          fi
+        else
+          echo "Cache area CACHEDIR ${CACHEDIR} not set correctly for cleanup-job in startup-script." 	
+        fi
       fi
     fi
   fi
@@ -295,18 +304,31 @@ case "$1" in
       package_update
       rm_wrong_module
       if check_kernelmodule ; then
-        ps ax | grep -q '\[afsd\]' || $DAEMON_BIN $AFSD_ARGS
-        RETVAL=$?
-        if [ $RETVAL -eq 0 ] ; then
-          setsysname
-          setsuid
-          get_cell
-          SETSERVERPREFS=/afs/$CELL/afsadm/sbin/afs_setserverprefs.sh
-          # background job that should run after the AFS initialization...
-          (sleep 60; [ -x $SETSERVERPREFS ] && $SETSERVERPREFS) </dev/null >/dev/null 2>&1 &
-        else
-          rc_failed 1
-        fi
+        ps ax | grep -q '\[afsd\]'
+        if [ $? -ne 0 ]; then
+          if [ "$CLEANCACHE" == "true" ] ; then
+            if [ "${CACHEDIR}" == "/usr/vice/cache" -o "${CACHEDIR}" == "/var/cache/openafs" ]; then
+              if [ -d ${CACHEDIR} ]; then
+                echo "Cleaning up cache area ${CACHEDIR}/ ..."
+                rm -rf ${CACHEDIR}/*
+              fi
+            else
+              echo "Cache area CACHEDIR ${CACHEDIR} not set correctly for cleanup-job in startup-script."
+            fi
+          fi
+          $DAEMON_BIN $AFSD_ARGS
+          RETVAL=$?
+          if [ $RETVAL -eq 0 ] ; then
+            setsysname
+            setsuid
+            get_cell
+            SETSERVERPREFS=/afs/$CELL/afsadm/sbin/afs_setserverprefs.sh
+            # background job that should run after the AFS initialization...
+            (sleep 60; [ -x $SETSERVERPREFS ] && $SETSERVERPREFS) </dev/null >/dev/null 2>&1 &
+          else
+            rc_failed 1
+          fi
+				fi
       else
         #modprobe failed
         rc_failed 5
