@@ -22,6 +22,10 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 
 # Version history #
+* 1.4.0 2017-06-27
+  * Add functionality to clear client caches on start
+  * Updates RedHat init script to v1.16
+  * Updates Suse init script to v1.16
 * 1.3.1 2017-02-21 Fix fact using wrong redirection
 * 1.3.0 2017-02-20 Support Puppet up to 4.9 and Ruby 2.3.1
 * 1.2.6 2016-06-07
