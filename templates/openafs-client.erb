@@ -50,3 +50,12 @@ UPDATE="<%= @config_client_update_real %>"
 # Available options: false | true
 # DKMS="true"
 DKMS="<%= @config_client_dkms_real %>"
+                                                                       
+#                                                                       #
+# This section is to control the AFS cache area cleanup before starting the afsd.
+# At the moment only available on Linux platform (SLE + RHEL).
+# It will be ignored on other platforms.
+# Available options: false | true
+#
+# CLEANCACHE="false"
+CLEANCACHE="<%= @config_client_clean_cache_on_start_real %>"                                                                     
