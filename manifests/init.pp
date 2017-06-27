@@ -3,32 +3,33 @@
 # Manage OpenAFS
 
 class afs (
-  $afs_cellserverdb      = undef,
-  $afs_cell              = undef,
-  $afs_config_path       = 'USE_DEFAULTS',
-  $afs_cron_job_content  = undef,
-  $afs_cron_job_hour     = undef,
-  $afs_cron_job_interval = undef,
-  $afs_cron_job_minute   = 42,
-  $afs_cron_job_monthday = undef,
-  $afs_cron_job_month    = undef,
-  $afs_cron_job_weekday  = undef,
-  $afs_suidcells         = undef,
-  $cache_path            = 'USE_DEFAULTS',
-  $cache_size            = '1000000',
-  $config_client_args    = '-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime',
-  $config_client_dkms    = 'USE_DEFAULTS',
-  $config_client_path    = 'USE_DEFAULTS',
-  $config_client_update  = false,
-  $create_symlinks       = false,
-  $init_script           = 'USE_DEFAULTS',
-  $init_template         = 'USE_DEFAULTS',
-  $links                 = undef,
-  $package_adminfile     = undef,
-  $package_name          = 'USE_DEFAULTS',
-  $package_provider      = undef,
-  $package_source        = undef,
-  $service_provider      = undef,
+  $afs_cellserverdb                   = undef,
+  $afs_cell                           = undef,
+  $afs_config_path                    = 'USE_DEFAULTS',
+  $afs_cron_job_content               = undef,
+  $afs_cron_job_hour                  = undef,
+  $afs_cron_job_interval              = undef,
+  $afs_cron_job_minute                = 42,
+  $afs_cron_job_monthday              = undef,
+  $afs_cron_job_month                 = undef,
+  $afs_cron_job_weekday               = undef,
+  $afs_suidcells                      = undef,
+  $cache_path                         = 'USE_DEFAULTS',
+  $cache_size                         = '1000000',
+  $config_client_args                 = '-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime',
+  $config_client_clean_cache_on_start = false,
+  $config_client_dkms                 = 'USE_DEFAULTS',
+  $config_client_path                 = 'USE_DEFAULTS',
+  $config_client_update               = false,
+  $create_symlinks                    = false,
+  $init_script                        = 'USE_DEFAULTS',
+  $init_template                      = 'USE_DEFAULTS',
+  $links                              = undef,
+  $package_adminfile                  = undef,
+  $package_name                       = 'USE_DEFAULTS',
+  $package_provider                   = undef,
+  $package_source                     = undef,
+  $service_provider                   = undef,
 ) {
 
   # <define os default values>
@@ -139,6 +140,8 @@ class afs (
   $cache_size_real = $cache_size
 
   $config_client_args_real = $config_client_args
+
+  $config_client_clean_cache_on_start_bool = str2bool($config_client_clean_cache_on_start)
 
   if is_bool($config_client_dkms) == true {
     $config_client_dkms_real = $config_client_dkms
@@ -256,6 +259,8 @@ class afs (
 
   validate_string($config_client_args_real)
 
+  validate_bool($config_client_clean_cache_on_start_bool)
+
   validate_bool($config_client_dkms_real)
 
   validate_absolute_path($config_client_path_real)
@@ -292,6 +297,8 @@ class afs (
 
 
   # <Install & Config>
+
+  $config_client_clean_cache_on_start_string = bool2str($config_client_clean_cache_on_start_bool)
 
   if $package_adminfile_real != undef {
     Package {
