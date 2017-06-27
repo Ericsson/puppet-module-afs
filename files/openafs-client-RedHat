@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Copyright (c) 2016 AFS-Core Ericsson
-# Version v1.15, 2016-03-11
+# Copyright (c) 2017 AFS-Core Ericsson
+# Version v1.16, 2017-06-20
 #
 # openafs-client	Start/Stop the OpenAFS Client
 #
@@ -16,6 +16,7 @@ AFS_KERNEL_MODULE=libafs
 AFS=/afs
 OPENAFS_VERSION=`rpm --queryformat '%{version}' -q openafs`
 OPENAFSDKMS=dkms-openafs
+CACHEDIR=/usr/vice/cache
 DEFAULTCELL="sunrise.ericsson.se"
 SUIDCELLS=/usr/vice/etc/SuidCells
 LOCKFILE="/var/lock/`basename $0`"
@@ -29,6 +30,7 @@ LOCKFD=99
 AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb -nosettime"}
 UPDATE=${UPDATE:-"false"}
 DKMS=${DKMS:-"true"}
+CLEANCACHE=${CLEANCACHE:-"false"}
 
 noroot_check() {
   if [ "`whoami | awk '{print $1}' | cut -f2 -d\!`" != "root" ]; then
@@ -315,7 +317,17 @@ start() {
     /usr/vice/etc/CellServDB
     chmod 644 /usr/vice/etc/CellServDB
     echo
-
+    if [ "$CLEANCACHE" == "true" ] ; then
+      if [ "${CACHEDIR}" == "/usr/vice/cache" -o "${CACHEDIR}" == "/var/cache/openafs" ]; then
+        if [ -d ${CACHEDIR} ]; then
+          echo $"Cleaning up cache area ${CACHEDIR}/ ..."
+          rm -rf ${CACHEDIR}/*
+        fi
+			else
+        echo $"Cache area CACHEDIR ${CACHEDIR} not set correctly for cleanup-job in startup-script."
+			fi
+    fi
+		
     # Only needed if dkms is used
     if dkms_check ; then
       modprobe $AFS_KERNEL_MODULE
