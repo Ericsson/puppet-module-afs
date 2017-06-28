@@ -188,6 +188,15 @@ Candidates for tuning: -stat, -volumes
 - *Default*: '-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime'
 
 
+config_client_clean_cache_on_start
+----------------------------------
+Boolean trigger for the cleaning of the client cache on start.
+If set to true, the provided init script will clean the client cache when starting the service.
+Please check openafs-client config file for supported OS families.
+
+- *Default*: false
+
+
 config_client_dkms
 ------------------
 Boolean to control the AFS kernel module handling via DKMS or the openafs start-script.
