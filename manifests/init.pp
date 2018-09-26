@@ -332,6 +332,13 @@ class afs (
   common::mkdir_p { $afs_config_path_real: }
   common::mkdir_p { $config_client_dir_real: }
 
+  if $solaris_container_real == false {
+    # add dependency to this service for all file resources
+    File {
+      before => Service[afs_openafs_client_service],
+    }
+  }
+
   if ($::osfamily == 'Suse' and $::operatingsystemrelease == '12') {
     file_line { 'allow_unsupported_modules':
       ensure => 'present',
@@ -414,11 +421,7 @@ class afs (
   }
 
   # Solaris containers must not start the service nor add setserverprefs cronjob.
-  if $solaris_container_real != true {
-    # add dependency to this service for all file resources
-    File {
-      before => Service[afs_openafs_client_service],
-    }
+  if $solaris_container_real == false {
 
     # THIS SERVICE SHOULD NOT BE RESTARTED
     # Restarting it may cause AFS module and kernel problems.
