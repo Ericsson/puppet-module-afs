@@ -1,12 +1,12 @@
 {
-  "name": "Phil-Friderici-afs",
+  "name": "kodguru-afs",
   "version": "1.4.1",
-  "author": "Phil-Friderici",
+  "author": "kodguru",
   "summary": "Manage OpenAFS",
   "license": "Apache-2.0",
-  "source": "git@github.com:Phil-Friderici/puppet-module-afs.git",
-  "project_page": "https://github.com/Phil-Friderici/puppet-module-afs",
-  "issues_url": "https://github.com/Phil-Friderici/puppet-module-afs/issues",
+  "source": "git@github.com:kodguru/puppet-module-afs.git",
+  "project_page": "https://github.com/kodguru/puppet-module-afs",
+  "issues_url": "https://github.com/kodguru/puppet-module-afs/issues",
   "operatingsystem_support": [
     {
       "operatingsystem": "RedHat",
