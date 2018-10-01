@@ -229,13 +229,14 @@ check_kernelmodule() {
     ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >>$KMOD_BUILDLOG 2>&1
     make -j4 >>$KMOD_BUILDLOG 2>&1
     if [ $? -eq 0 ]; then
-      [ ! -d /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/ ] && mkdir /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
+      MODULEDIR=/lib/modules/$KERNEL_VERSION/kernel/fs/openafs
+      [ ! -d $MODULEDIR ] && mkdir $MODULEDIR
 
       if [ -f src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko ]; then
-        cp src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
-        ln /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/openafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/libafs.ko
+        cp src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko $MODULEDIR/
+        ln $MODULEDIR/openafs.ko $MODULEDIR/libafs.ko
       else
-        cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
+        cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko $MODULEDIR/
       fi
 
       depmod -a

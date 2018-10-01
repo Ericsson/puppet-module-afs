@@ -248,19 +248,23 @@ check_kernelmodule() {
       make clean >>$KMOD_BUILDLOG 2>&1
       ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >>$KMOD_BUILDLOG 2>&1
       make -j4 >>$KMOD_BUILDLOG 2>&1
+      if [ $? -eq 0 ]; then
+        MODULEDIR=/lib/modules/$KERNEL_VERSION/kernel/fs/openafs
+        [ ! -d $MODULEDIR ] && mkdir $MODULEDIR
 
-      [ ! -d /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/ ] && mkdir /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
+        if [ -f src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko ]; then
+          cp src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko $MODULEDIR/
+          ln $MODULEDIR/openafs.ko $MODULEDIR/libafs.ko
+        else
+          cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko $MODULEDIR/
+        fi
 
-      if [ -f src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko ]; then
-        cp src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
-        ln /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/openafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/libafs.ko
+        depmod -a
+        modprobe $AFS_KERNEL_MODULE >>$KMOD_BUILDLOG 2>&1
+        RETVAL=$?
       else
-        cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
+        RETVAL=1
       fi
-
-      depmod -a
-      modprobe $AFS_KERNEL_MODULE >>$KMOD_BUILDLOG 2>&1
-      RETVAL=$?
       [ $RETVAL -eq 0 ] && rm -f $KMOD_BUILDLOG && echo -n "Build succeeded!" && echo && return 0
 
       echo -n "Failed to build kernel module."
