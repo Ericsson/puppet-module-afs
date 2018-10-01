@@ -176,26 +176,27 @@ dkms_check() {
 }
 
 check_kernelmodule() {
+  KERNEL_VERSION=$(uname -r)
   if dkms_check; then
-    dkms status -m $AFS_KERNEL_MODULE -k $(uname -r) | grep -w 'installed-weak' >/dev/null
+    dkms status -m $AFS_KERNEL_MODULE -k "$KERNEL_VERSION" | grep -w 'installed-weak' >/dev/null
     if [ $? -eq 0 ]; then
       echo
       echo "Weak module detected, will be removed.."
-      if [ -h /lib/modules/$(uname -r)/weak-updates/${AFS_KERNEL_MODULE}.ko ]; then
-        rm -fv /lib/modules/$(uname -r)/weak-updates/${AFS_KERNEL_MODULE}.ko
+      if [ -h /lib/modules/"$KERNEL_VERSION"/weak-updates/${AFS_KERNEL_MODULE}.ko ]; then
+        rm -fv /lib/modules/"$KERNEL_VERSION"/weak-updates/${AFS_KERNEL_MODULE}.ko
       fi
       echo
       echo "DKMS stuff ..."
-      dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver $(uname -r)
+      dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver "$KERNEL_VERSION"
     fi
-    dkms status -m $AFS_KERNEL_MODULE -k $(uname -r) | grep ': installed$' >/dev/null
+    dkms status -m $AFS_KERNEL_MODULE -k "$KERNEL_VERSION" | grep ': installed$' >/dev/null
     if [ $? -ne 0 ]; then
       echo
-      echo "No kernel-module detected for $AFS_KERNEL_MODULE version $OPENAFS_VERSION_FULL and kernel $(uname -r) .."
+      echo "No kernel-module detected for $AFS_KERNEL_MODULE version $OPENAFS_VERSION_FULL and kernel $KERNEL_VERSION .."
       echo "DKMS stuff ..."
       OPENAFS_VERSION_FULL=$(rpm --queryformat '%{PROVIDEVERSION}' -q openafs)
-      dkms add -m $AFS_KERNEL_MODULE -v $OPENAFS_VERSION_FULL --kernelver $(uname -r)
-      dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver $(uname -r)
+      dkms add -m $AFS_KERNEL_MODULE -v $OPENAFS_VERSION_FULL --kernelver "$KERNEL_VERSION"
+      dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver "$KERNEL_VERSION"
     fi
     return 0
   fi
@@ -216,13 +217,12 @@ check_kernelmodule() {
   fi
   echo
 
-  KERNEL_VERSION=$(uname -r)
   KMOD_BUILDLOG=/tmp/openafs-kmod-build-$(date +%Y%m%d-%H%M).log
 
   echo "Build log for OpenAFS module: $(date)" >$KMOD_BUILDLOG
 
-  if [ -d /usr/src/openafs-kernel-$OPENAFS_VERSION/src -a -f /usr/src/openafs-kernel-$OPENAFS_VERSION/src/configure ]; then
-    cd /usr/src/openafs-kernel-$OPENAFS_VERSION/src
+  if [ -d /usr/src/openafs-kernel-$OPENAFS_VERSION/src ] && [ -f /usr/src/openafs-kernel-$OPENAFS_VERSION/src/configure ]; then
+    cd /usr/src/openafs-kernel-$OPENAFS_VERSION/src || return 1
 
     make clean >>$KMOD_BUILDLOG 2>&1
 
@@ -232,12 +232,15 @@ check_kernelmodule() {
       MODULEDIR=/lib/modules/$KERNEL_VERSION/kernel/fs/openafs
       [ ! -d $MODULEDIR ] && mkdir $MODULEDIR
 
-      if [ -f src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko ]; then
-        cp src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko $MODULEDIR/
-        ln $MODULEDIR/openafs.ko $MODULEDIR/libafs.ko
-      else
-        cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko $MODULEDIR/
-      fi
+      for file in src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko; do
+        if [ -f "$file" ]; then
+          cp "$file" $MODULEDIR/
+          ln $MODULEDIR/openafs.ko $MODULEDIR/libafs.ko
+          break
+        else
+          cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko $MODULEDIR/
+        fi
+      done
 
       depmod -a
       modprobe $AFS_KERNEL_MODULE >>$KMOD_BUILDLOG 2>&1
@@ -265,17 +268,17 @@ rm_wrong_module() {
   if dkms_check; then
     return 0
   fi
-
+  KERNEL_VERSION=$(uname -r)
   module="$(modinfo -F filename $AFS_KERNEL_MODULE 2>/dev/null)"
   if [ -f "$module" ]; then
     mod_version=$(strings $module | awk '/OpenAFS/ {sub("^.*OpenAFS\\\s*",""); print $1}')
     pkg_version=$(fs --version | awk '{print $2}')
     if [ "$mod_version" != "$pkg_version" ]; then
       rm $module
-      if [ -f "/lib/modules/$(uname -r)/kernel/fs/openafs/openafs.ko" ]; then
-        rm "/lib/modules/$(uname -r)/kernel/fs/openafs/openafs.ko"
+      if [ -f "/lib/modules/$KERNEL_VERSION/kernel/fs/openafs/openafs.ko" ]; then
+        rm "/lib/modules/$KERNEL_VERSION/kernel/fs/openafs/openafs.ko"
       fi
-      echo "Removed libafs.ko version mismatch"
+      echo "Removed libafs.ko version mismatch: $mod_version <-> $pkg_version"
     fi
   fi
 }
@@ -336,10 +339,10 @@ start() {
     chmod 644 /usr/vice/etc/CellServDB
     echo
     if [ "$CLEANCACHE" == "true" ]; then
-      if [ "${CACHEDIR}" == "/usr/vice/cache" -o "${CACHEDIR}" == "/var/cache/openafs" ]; then
+      if [ "${CACHEDIR}" == "/usr/vice/cache" ] || [ "${CACHEDIR}" == "/var/cache/openafs" ]; then
         if [ -d ${CACHEDIR} ]; then
           echo $"Cleaning up cache area ${CACHEDIR}/ ..."
-          rm -rf ${CACHEDIR}/*
+          rm -rf ${CACHEDIR:?}/*
         fi
       else
         echo $"Cache area CACHEDIR ${CACHEDIR} not set correctly for cleanup-job in startup-script."

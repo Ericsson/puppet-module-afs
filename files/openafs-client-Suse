@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 #
 # Copyright (c) 2018 AFS-Core Ericsson
 # Version v1.17, 2018-08-27
@@ -206,7 +206,7 @@ check_kernelmodule() {
   KMOD_BUILDLOG=/tmp/openafs-kmod-build-$(date +%Y%m%d-%H%M).log
   echo "Build log for OpenAFS module: $(date)" >$KMOD_BUILDLOG
   if [ -d /usr/src/kernel-modules/openafs/libafs_tree ]; then
-    cd /usr/src/kernel-modules/openafs/libafs_tree
+    cd /usr/src/kernel-modules/openafs/libafs_tree || return 1
     make clean >>$KMOD_BUILDLOG 2>&1
     ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >>$KMOD_BUILDLOG 2>&1
     make -j4 >>$KMOD_BUILDLOG 2>&1
@@ -244,7 +244,7 @@ rm_wrong_module() {
     pkg_version=$(fs --version | awk '{print $2}')
     if [ "$mod_version" != "$pkg_version" ]; then
       rm "$module"
-      echo "Removed libafs.ko, version mismatch"
+      echo "Removed libafs.ko, version mismatch: $mod_version <-> $pkg_version"
     fi
   fi
 }
@@ -273,10 +273,10 @@ package_update() {
       fi
       zypper --no-gpg-checks $ZYPPEROPTS -n in openafs openafs-docs openafs-krb5-mit openafs-client openafs-kernel-source 2>/dev/null
       if [ "$CLEANCACHE" != "true" ]; then
-        if [ "${CACHEDIR}" == "/usr/vice/cache" -o "${CACHEDIR}" == "/var/cache/openafs" ]; then
+        if [ "${CACHEDIR}" == "/usr/vice/cache" ] || [ "${CACHEDIR}" == "/var/cache/openafs" ]; then
           if [ -d ${CACHEDIR} ]; then
             echo "Cleaning up cache area ${CACHEDIR}/ ..."
-            rm -rf ${CACHEDIR}/*
+            rm -rf ${CACHEDIR:?}/*
           fi
         else
           echo "Cache area CACHEDIR ${CACHEDIR} not set correctly for cleanup-job in startup-script."
@@ -322,10 +322,10 @@ start)
       ps ax | grep -q '\[afsd\]'
       if [ $? -ne 0 ]; then
         if [ "$CLEANCACHE" == "true" ]; then
-          if [ "${CACHEDIR}" == "/usr/vice/cache" -o "${CACHEDIR}" == "/var/cache/openafs" ]; then
+          if [ "${CACHEDIR}" == "/usr/vice/cache" ] || [ "${CACHEDIR}" == "/var/cache/openafs" ]; then
             if [ -d ${CACHEDIR} ]; then
               echo "Cleaning up cache area ${CACHEDIR}/ ..."
-              rm -rf ${CACHEDIR}/*
+              rm -rf ${CACHEDIR:?}/*
             fi
           else
             echo "Cache area CACHEDIR ${CACHEDIR} not set correctly for cleanup-job in startup-script."
