@@ -15,12 +15,12 @@ DAEMON_BIN=/usr/vice/etc/afsd
 AFS_KERNEL_MODULE=libafs
 AFS=/afs
 
-OPENAFS_VERSION=`rpm --queryformat '%{version}' -q openafs`
+OPENAFS_VERSION=$(rpm --queryformat '%{version}' -q openafs)
 OPENAFSDKMS=dkms-openafs
 CACHEDIR=/usr/vice/cache
 DEFAULTCELL="sunrise.ericsson.se"
 SUIDCELLS=/usr/vice/etc/SuidCells
-LOCKFILE="/var/lock/`basename $0`"
+LOCKFILE="/var/lock/$(basename $0)"
 LOCKFD=99
 
 # PATH is set via /etc/init.d/functions
@@ -34,7 +34,7 @@ DKMS=${DKMS:-"true"}
 CLEANCACHE=${CLEANCACHE:-"false"}
 
 noroot_check() {
-  if [ "`whoami | awk '{print $1}' | cut -f2 -d\!`" != "root" ]; then
+  if [ "$(whoami | awk '{print $1}' | cut -f2 -d\!)" != "root" ]; then
     return 0
   else
     return 1
@@ -43,14 +43,20 @@ noroot_check() {
 
 # Lock
 lock_routine() {
-  if  { flock -h; } >/dev/null 2>&1; then
-    _lock()             { flock -$1 $LOCKFD; }
-    _no_more_locking()  { _lock u; _lock xn && rm -f $LOCKFILE; }
-    _prepare_locking()  { eval "exec $LOCKFD>\"$LOCKFILE\""; trap _no_more_locking EXIT; }
-    exlock_now()        { _lock xn; }  # obtain an exclusive lock immediately or fail
-    exlock()            { _lock x; }   # obtain an exclusive lock
-    shlock()            { _lock s; }   # obtain a shared lock
-    unlock()            { _lock u; }   # drop a lock
+  if { flock -h; } >/dev/null 2>&1; then
+    _lock() { flock -$1 $LOCKFD; }
+    _no_more_locking() {
+      _lock u
+      _lock xn && rm -f $LOCKFILE
+    }
+    _prepare_locking() {
+      eval "exec $LOCKFD>\"$LOCKFILE\""
+      trap _no_more_locking EXIT
+    }
+    exlock_now() { _lock xn; } # obtain an exclusive lock immediately or fail
+    exlock() { _lock x; }      # obtain an exclusive lock
+    shlock() { _lock s; }      # obtain a shared lock
+    unlock() { _lock u; }      # drop a lock
     _prepare_locking
     return 0
   else
@@ -60,7 +66,7 @@ lock_routine() {
 
 setsuid() {
   if [ -f $SUIDCELLS ]; then
-    for CELLS in `grep '^[^#]' $SUIDCELLS`; do
+    for CELLS in $(grep '^[^#]' $SUIDCELLS); do
       echo "Setting $CELLS suid"
       fs setcell -cell $CELLS -suid
     done
@@ -76,77 +82,77 @@ firstint() {
 }
 
 get_cell() {
-  CELL=`fs wscell 2>/dev/null | sed -e "s/.*to cell '\(.*\)'/\1/"`
+  CELL=$(fs wscell 2>/dev/null | sed -e "s/.*to cell '\(.*\)'/\1/")
   if [ -z "$CELL" ]; then
     CELL="$DEFAULTCELL"
   fi
 }
 
 setsysname() {
-  _ARCH=`uname -i | sed 's/x86_64/amd64/'`
+  _ARCH=$(uname -i | sed 's/x86_64/amd64/')
   _DIST=""
   _VER=""
 
   if [ -f "/etc/debian_version" ]; then
     if [ -f /etc/lsb-release ]; then
-      _DIST=`awk -F= '$1=="DISTRIB_ID" {print $2}' /etc/lsb-release`
-      _VER=`awk -F= '$1=="DISTRIB_RELEASE" {print $2}' /etc/lsb-release | firstint`
+      _DIST=$(awk -F= '$1=="DISTRIB_ID" {print $2}' /etc/lsb-release)
+      _VER=$(awk -F= '$1=="DISTRIB_RELEASE" {print $2}' /etc/lsb-release | firstint)
     fi
     [ -n "$_DIST" ] ||
-      _DIST=`lsb_release -d | awk '/Description/ {print $2}'`
+      _DIST=$(lsb_release -d | awk '/Description/ {print $2}')
     [ -n "$_VER" ] ||
-      _VER=`lsb_release -d | awk '/Description/ {print $3}' | firstint`
+      _VER=$(lsb_release -d | awk '/Description/ {print $3}' | firstint)
   fi
-  for d in novell SuSE fedora redhat centos ; do
-    if [ -f "/etc/$d-release" ] ; then
+  for d in novell SuSE fedora redhat centos; do
+    if [ -f "/etc/$d-release" ]; then
       _DIST=$d
-      _VER=`rpm -qf --qf '%{version}\n' /etc/${_DIST}-release | firstint`
+      _VER=$(rpm -qf --qf '%{version}\n' /etc/${_DIST}-release | firstint)
       break
     fi
   done
   case "$_DIST" in
-    novell|SuSE)
-      if grep -qi openSUSE /etc/${_DIST}-release ; then
-        _DIST="osuse"
-      else
-        _DIST="sle"
-      fi
-      ;;
-    redhat|centos)
-      _DIST="rhel"
-      ;;
-    fedora)
-      _DIST="fc"
-      ;;
-    Ubuntu)
-      _DIST="ubunt"
-      ;;
-    *)
-      return
-      ;;
+  novell | SuSE)
+    if grep -qi openSUSE /etc/${_DIST}-release; then
+      _DIST="osuse"
+    else
+      _DIST="sle"
+    fi
+    ;;
+  redhat | centos)
+    _DIST="rhel"
+    ;;
+  fedora)
+    _DIST="fc"
+    ;;
+  Ubuntu)
+    _DIST="ubunt"
+    ;;
+  *)
+    return
+    ;;
   esac
 
   # Sysname list.  The order here is from specific to general, with a
   # fallback to the compiled-in value from sys.  This will be
   # used as the sysname search path.
-  if { SYS=`sys`; } >/dev/null 2>&1; then
+  if { SYS=$(sys); } >/dev/null 2>&1; then
     if [ -n "$_VER" ]; then
-       SYSNAMELIST="${_ARCH}_${_DIST}${_VER} $SYS"
+      SYSNAMELIST="${_ARCH}_${_DIST}${_VER} $SYS"
     fi
   fi
-  
+
   # Set the sysname
   if [ -n "$SYSNAMELIST" ]; then
-    SYSNAME=`echo "$SYSNAMELIST" | awk 'BEGIN {ORS=" "} { for (i=1;i<=NF;i+=1) print "-newsys",$i }'`
+    SYSNAME=$(echo "$SYSNAMELIST" | awk 'BEGIN {ORS=" "} { for (i=1;i<=NF;i+=1) print "-newsys",$i }')
     _CMD="fs sysname $SYSNAME"
     echo "Setting sysname: $SYSNAMELIST"
-    $_CMD > /dev/null
+    $_CMD >/dev/null
   fi
 }
 
 killafs() {
   SIGNAL=$1
-  PIDS=`lsof -Fp $AFS | sed -e 's/p//'`
+  PIDS=$(lsof -Fp $AFS | sed -e 's/p//')
   if [ "x" != "x$PIDS" ]; then
     kill -$SIGNAL $PIDS >/dev/null 2>&1
     sleep 3
@@ -170,66 +176,70 @@ dkms_check() {
 }
 
 check_kernelmodule() {
-  if dkms_check ; then
-    dkms status -m $AFS_KERNEL_MODULE -k `uname -r` | grep -w 'installed-weak' > /dev/null
+  if dkms_check; then
+    dkms status -m $AFS_KERNEL_MODULE -k $(uname -r) | grep -w 'installed-weak' >/dev/null
     if [ $? -eq 0 ]; then
       echo
-      echo "Weak module detected, will be removed.."	
-      if [ -h /lib/modules/`uname -r`/weak-updates/${AFS_KERNEL_MODULE}.ko ]; then
-        rm -fv /lib/modules/`uname -r`/weak-updates/${AFS_KERNEL_MODULE}.ko
+      echo "Weak module detected, will be removed.."
+      if [ -h /lib/modules/$(uname -r)/weak-updates/${AFS_KERNEL_MODULE}.ko ]; then
+        rm -fv /lib/modules/$(uname -r)/weak-updates/${AFS_KERNEL_MODULE}.ko
       fi
       echo
       echo "DKMS stuff ..."
-      dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver `uname -r`
+      dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver $(uname -r)
     fi
-    dkms status -m $AFS_KERNEL_MODULE -k `uname -r` | grep ': installed$' > /dev/null
+    dkms status -m $AFS_KERNEL_MODULE -k $(uname -r) | grep ': installed$' >/dev/null
     if [ $? -ne 0 ]; then
       echo
-      echo "No kernel-module detected for $AFS_KERNEL_MODULE version $OPENAFS_VERSION_FULL and kernel `uname -r` .."
+      echo "No kernel-module detected for $AFS_KERNEL_MODULE version $OPENAFS_VERSION_FULL and kernel $(uname -r) .."
       echo "DKMS stuff ..."
-      OPENAFS_VERSION_FULL=`rpm --queryformat '%{PROVIDEVERSION}' -q openafs`
-      dkms add -m $AFS_KERNEL_MODULE -v $OPENAFS_VERSION_FULL --kernelver `uname -r`
-      dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver `uname -r`
+      OPENAFS_VERSION_FULL=$(rpm --queryformat '%{PROVIDEVERSION}' -q openafs)
+      dkms add -m $AFS_KERNEL_MODULE -v $OPENAFS_VERSION_FULL --kernelver $(uname -r)
+      dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver $(uname -r)
     fi
     return 0
   fi
 
-  modprobe $AFS_KERNEL_MODULE > /dev/null 2>&1
+  modprobe $AFS_KERNEL_MODULE >/dev/null 2>&1
   RETVAL=$?
   [ $RETVAL -eq 0 ] && return 0 # Kernel module loaded, continue...
 
   echo
   echo $"Failed to load kernel module, attempting rebuild.."
   warning $"Failed to load kernel module, attempting rebuild.."
-  if lock_routine ; then
-    exlock_now || { echo; echo " -> Lock-file $LOCKFILE exists! Will exit now."; exit 1; }
+  if lock_routine; then
+    exlock_now || {
+      echo
+      echo " -> Lock-file $LOCKFILE exists! Will exit now."
+      exit 1
+    }
   fi
   echo
 
-  KERNEL_VERSION=`uname -r`
-  KMOD_BUILDLOG=/tmp/openafs-kmod-build-`date +%Y%m%d-%H%M`.log
+  KERNEL_VERSION=$(uname -r)
+  KMOD_BUILDLOG=/tmp/openafs-kmod-build-$(date +%Y%m%d-%H%M).log
 
-  echo "Build log for OpenAFS module: `date`" > $KMOD_BUILDLOG
+  echo "Build log for OpenAFS module: $(date)" >$KMOD_BUILDLOG
 
   if [ -d /usr/src/openafs-kernel-$OPENAFS_VERSION/src -a -f /usr/src/openafs-kernel-$OPENAFS_VERSION/src/configure ]; then
     cd /usr/src/openafs-kernel-$OPENAFS_VERSION/src
 
-    make clean >> $KMOD_BUILDLOG 2>&1
-    
-    ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >> $KMOD_BUILDLOG 2>&1
-    make -j4 >> $KMOD_BUILDLOG 2>&1
+    make clean >>$KMOD_BUILDLOG 2>&1
+
+    ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >>$KMOD_BUILDLOG 2>&1
+    make -j4 >>$KMOD_BUILDLOG 2>&1
     if [ $? -eq 0 ]; then
       [ ! -d /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/ ] && mkdir /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
-      
+
       if [ -f src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko ]; then
         cp src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
         ln /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/openafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/libafs.ko
       else
         cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko /lib/modules/$KERNEL_VERSION/kernel/fs/openafs/
       fi
-      
+
       depmod -a
-      modprobe $AFS_KERNEL_MODULE >> $KMOD_BUILDLOG 2>&1
+      modprobe $AFS_KERNEL_MODULE >>$KMOD_BUILDLOG 2>&1
       RETVAL=$?
     else
       RETVAL=1
@@ -251,18 +261,18 @@ check_kernelmodule() {
 
 rm_wrong_module() {
   # Only needed if dkms is not used
-  if dkms_check ; then
+  if dkms_check; then
     return 0
   fi
 
-  module="`modinfo -F filename $AFS_KERNEL_MODULE 2> /dev/null`"
-  if [ -f "$module" ] ; then
-    mod_version=`strings $module | grep OpenAFS | awk '{print $3}'`
-    pkg_version=`fs --version | awk '{print $2}'`
-    if [ "$mod_version" != "$pkg_version" ] ; then
+  module="$(modinfo -F filename $AFS_KERNEL_MODULE 2>/dev/null)"
+  if [ -f "$module" ]; then
+    mod_version=$(strings $module | grep OpenAFS | awk '{print $3}')
+    pkg_version=$(fs --version | awk '{print $2}')
+    if [ "$mod_version" != "$pkg_version" ]; then
       rm $module
-      if [ -f "/lib/modules/`uname -r`/kernel/fs/openafs/openafs.ko" ]; then
-        rm "/lib/modules/`uname -r`/kernel/fs/openafs/openafs.ko"
+      if [ -f "/lib/modules/$(uname -r)/kernel/fs/openafs/openafs.ko" ]; then
+        rm "/lib/modules/$(uname -r)/kernel/fs/openafs/openafs.ko"
       fi
       echo "Removed libafs.ko version mismatch"
     fi
@@ -270,16 +280,20 @@ rm_wrong_module() {
 }
 
 package_update() {
-  if [ "$UPDATE" == "true" ] ; then
+  if [ "$UPDATE" == "true" ]; then
     echo "Checking for OpenAFS updates.."
-    if lock_routine ; then
-      exlock_now || { echo; echo " -> Lock-file $LOCKFILE exists! Will exit now."; exit 1; }
+    if lock_routine; then
+      exlock_now || {
+        echo
+        echo " -> Lock-file $LOCKFILE exists! Will exit now."
+        exit 1
+      }
     fi
     echo
-    yum --nogpgcheck -q clean all > /dev/null
-    yum --nogpgcheck -q check-update openafs > /dev/null
+    yum --nogpgcheck -q clean all >/dev/null
+    yum --nogpgcheck -q check-update openafs >/dev/null
     RETVAL=$?
-    if [ "$RETVAL" -eq "100" ] ; then
+    if [ "$RETVAL" -eq "100" ]; then
       echo "Upgrading OpenAFS"
       if [ "$DKMS" == "true" ]; then
         yum --nogpgcheck -q -y install openafs openafs-client openafs-docs openafs-krb5 openafs-compat dkms-openafs dkms
@@ -297,7 +311,7 @@ start() {
     exit 1
   fi
   echo -n $"Starting openafs-client: "
-  if [ -e /var/lock/subsys/openafs-client ] ; then
+  if [ -e /var/lock/subsys/openafs-client ]; then
     echo $"cannot start openafs-client: already running"
     failure $"cannot start openafs-client: already running"
     echo
@@ -314,28 +328,28 @@ start() {
   # A configured yum repository is needed for the package-update
   package_update
   rm_wrong_module
-  if check_kernelmodule ; then
+  if check_kernelmodule; then
     echo -n $"Updating CellServDB: "
-    cat /usr/vice/etc/CellServDB.local /usr/vice/etc/CellServDB.dist > \
-    /usr/vice/etc/CellServDB
+    cat /usr/vice/etc/CellServDB.local /usr/vice/etc/CellServDB.dist >/usr/vice/etc/CellServDB
+
     chmod 644 /usr/vice/etc/CellServDB
     echo
-    if [ "$CLEANCACHE" == "true" ] ; then
+    if [ "$CLEANCACHE" == "true" ]; then
       if [ "${CACHEDIR}" == "/usr/vice/cache" -o "${CACHEDIR}" == "/var/cache/openafs" ]; then
         if [ -d ${CACHEDIR} ]; then
           echo $"Cleaning up cache area ${CACHEDIR}/ ..."
           rm -rf ${CACHEDIR}/*
         fi
-			else
+      else
         echo $"Cache area CACHEDIR ${CACHEDIR} not set correctly for cleanup-job in startup-script."
-			fi
+      fi
     fi
-		
+
     # Only needed if dkms is used
-    if dkms_check ; then
+    if dkms_check; then
       modprobe $AFS_KERNEL_MODULE
       RETVAL=$?
-      if [ $RETVAL -ne 0 ] ; then
+      if [ $RETVAL -ne 0 ]; then
         echo $"failed to load openafs kernel module."
         failure $"failed to load openafs kernel module."
         echo
@@ -355,7 +369,10 @@ start() {
       get_cell
       SETSERVERPREFS=/afs/$CELL/afsadm/sbin/afs_setserverprefs.sh
       # background job that should run after the AFS initialization...
-      (sleep 60; [ -x $SETSERVERPREFS ] && $SETSERVERPREFS) </dev/null >/dev/null 2>&1 &
+      (
+        sleep 60
+        [ -x $SETSERVERPREFS ] && $SETSERVERPREFS
+      ) </dev/null >/dev/null 2>&1 &
     fi
     return $RETVAL
   else
@@ -372,7 +389,7 @@ stop() {
     exit 1
   fi
   echo -n $"Stopping openafs-client: "
-  if [ ! -e /var/lock/subsys/openafs-client ] ; then
+  if [ ! -e /var/lock/subsys/openafs-client ]; then
     echo $"cannot stop openafs-client: not running"
     failure $"cannot stop openafs-client: not running"
     echo
@@ -384,16 +401,16 @@ stop() {
   umount $AFS
   RETVAL=$?
   echo
-  if [ $RETVAL -eq 0 ] ; then
+  if [ $RETVAL -eq 0 ]; then
     $DAEMON_BIN -shutdown
-    lsmod | grep -w $AFS_KERNEL_MODULE > /dev/null
+    lsmod | grep -w $AFS_KERNEL_MODULE >/dev/null
     if [ $? -ne 0 ]; then
-      AFS_KERNEL_MODULE=`lsmod | awk '/afs/ {print $1}'`
-    fi 
+      AFS_KERNEL_MODULE=$(lsmod | awk '/afs/ {print $1}')
+    fi
     rmmod $AFS_KERNEL_MODULE
     RETVAL=$?
   fi
-  if [ $RETVAL -eq 0 ] ; then
+  if [ $RETVAL -eq 0 ]; then
     rm -f /var/lock/subsys/openafs-client
   fi
   return $RETVAL
@@ -405,7 +422,7 @@ stop-force() {
     exit 1
   fi
   echo -n $"Stopping openafs-client: "
-  if [ ! -e /var/lock/subsys/openafs-client ] ; then
+  if [ ! -e /var/lock/subsys/openafs-client ]; then
     echo $"cannot stop openafs-client: not running"
     failure $"cannot stop openafs-client: not running"
     echo
@@ -418,22 +435,22 @@ stop-force() {
     echo "Sending all processes using $AFS the KILL signal ..."
     killafs KILL
   fi
-  if dkms_check ; then
+  if dkms_check; then
     AFS_KERNEL_MODULE=openafs
   fi
   umount $AFS
   RETVAL=$?
   echo
-  if [ $RETVAL -eq 0 ] ; then
+  if [ $RETVAL -eq 0 ]; then
     $DAEMON_BIN -shutdown
-    lsmod | grep -w $AFS_KERNEL_MODULE > /dev/null
+    lsmod | grep -w $AFS_KERNEL_MODULE >/dev/null
     if [ $? -ne 0 ]; then
-      AFS_KERNEL_MODULE=`lsmod | awk '/afs/ {print $1}'`
-    fi 
+      AFS_KERNEL_MODULE=$(lsmod | awk '/afs/ {print $1}')
+    fi
     rmmod $AFS_KERNEL_MODULE
     RETVAL=$?
   fi
-  if [ $RETVAL -eq 0 ] ; then
+  if [ $RETVAL -eq 0 ]; then
     rm -f /var/lock/subsys/openafs-client
   fi
   return $RETVAL
@@ -446,7 +463,7 @@ rhstatus() {
 
 check() {
   echo -n $"Checking openafs-client: "
-  if [ ! -e /var/lock/subsys/openafs-client ] ; then
+  if [ ! -e /var/lock/subsys/openafs-client ]; then
     echo $"cannot check openafs-client: not running"
     failure $"cannot check openafs-client: not running"
     echo
@@ -474,31 +491,32 @@ restart() {
 }
 
 case "$1" in
-  start)
-    start
-    ;;
-  stop)
-    stop
-    ;;
-  stop-force)
-    stop-force
-    ;;
-  restart)
-    restart
-    ;;
-  status)
-    rhstatus
-    exit $?
-    ;;
-  check)
-    check
-    ;;
-  condrestart)
-    [ -f /var/lock/subsys/openafs-client ] && restart || :
-    ;;
-  *)
-    echo $"Usage: $0 {start|stop|stop-force|status|check|restart|condrestart}"
-    exit 1
+start)
+  start
+  ;;
+stop)
+  stop
+  ;;
+stop-force)
+  stop-force
+  ;;
+restart)
+  restart
+  ;;
+status)
+  rhstatus
+  exit $?
+  ;;
+check)
+  check
+  ;;
+condrestart)
+  [ -f /var/lock/subsys/openafs-client ] && restart || :
+  ;;
+*)
+  echo $"Usage: $0 {start|stop|stop-force|status|check|restart|condrestart}"
+  exit 1
+  ;;
 esac
 
 exit $?
