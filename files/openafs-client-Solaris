@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (c) 2018 AFS-Core Ericsson
-# Version v1.11, 2018-09-27
+# Version v1.12, 2018-10-01
 #
 # openafs-client  Start/Stop the OpenAFS Client
 # rc script for AFS on Solaris 8/9/10/11 or OpenSolaris-based platforms
@@ -82,7 +82,7 @@ case $1 in
       echo "Solaris Non-Global Zone: afsd will not start and is not needed !"
       exit
     fi
-    
+
     if issol11; then
       DRVFS=drv
     else
@@ -102,16 +102,16 @@ case $1 in
         #reboot
       fi
     fi
-    
+
     ## Check to see that /bin/isalist exists and is executable
     if { ! isalist; } >/dev/null 2>&1; then
       echo "isalist not available"
       exit 1;
     fi
-    
+
     ## Determine if we are running the 64 bit OS
     ## If sparcv9 then the location of the afs and nfs extensions differ
-    
+
     case `isalist` in
       *amd64* )
         nfssrv=/kernel/misc/amd64/nfssrv
@@ -123,14 +123,14 @@ case $1 in
         nfssrv=/kernel/misc/nfssrv
         afs=/kernel/$DRVFS/afs ;;
     esac
-    
-    
+
+
     #
     # Load kernel extensions
     #
     # nfssrv has to be loaded first
-    
-    
+
+
     if [ -f $nfssrv ]; then
       echo "Loading NFS server kernel extensions"
       modload $nfssrv
@@ -138,9 +138,9 @@ case $1 in
       echo "$nfssrv does not exist. Skipping AFS startup."
       exit 1
     fi
-    
+
     ## Load AFS kernel extensions
-    
+
     if [ -f $afs ]; then
       echo "Loading AFS kernel extensions"
       if issol11; then
@@ -160,7 +160,7 @@ case $1 in
           echo "Installing AFS driver and loading kernel extensions"
           add_drv -m '* 0666 root root' afs
         fi
-        
+
         # Create the /dev/afs link
         if grep name=afs /etc/devlink.tab >/dev/null ; then
           echo "Entry for afs already exists in /etc/devlink.tab"
@@ -176,11 +176,11 @@ case $1 in
       echo "$afs does not exist. Skipping AFS startup."
       exit 1
     fi
-    
+
     #
     # Check that all of the client configuration files exist
     #
-    
+
     for file in /usr/vice/etc/afsd /usr/vice/etc/cacheinfo \
       /usr/vice/etc/ThisCell /usr/vice/etc/CellServDB
     do
@@ -189,12 +189,12 @@ case $1 in
         exit 1
       fi
     done
-    
+
     #
-    # Check that the root directory for AFS (/afs) 
+    # Check that the root directory for AFS (/afs)
     # and the cache directory (/usr/vice/cache) both exist
     #
-    
+
     for dir in `awk -F: '{print $1, $2}' /usr/vice/etc/cacheinfo`
     do
       if [ ! -d ${dir} ]; then
@@ -202,7 +202,7 @@ case $1 in
         exit 2
       fi
     done
-    
+
     echo "Starting $DAEMON "
     if chkafsd; then
       echo " -> already running"
@@ -255,7 +255,7 @@ case $1 in
     #
     # Check the running AFS client
     #
-    
+
     echo "Checking openafs-client: "
     if chkafsd; then
       get_cell
@@ -269,7 +269,7 @@ case $1 in
       echo "Cannot check openafs-client: not running"
     fi
     echo ;;
-    
+
   *)
 	  echo "Usage: $0 {start|stop|check}"
     exit 1;;

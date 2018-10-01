@@ -1,7 +1,7 @@
 #! /bin/bash
 #
 # Copyright (c) 2018 AFS-Core Ericsson
-# Version v1.17, 2018-08-27
+# Version v1.18, 2018-10-01
 #
 # System startup script for OpenAFS
 #
@@ -240,7 +240,7 @@ check_kernelmodule() {
 rm_wrong_module() {
   module="$(modinfo -F filename $AFS_KERNEL_MODULE 2>/dev/null)"
   if [ -f "$module" ]; then
-    mod_version=$(strings $module | awk '/OpenAFS/ {sub("^.*OpenAFS\\\s*",""); print $1}')
+    mod_version=$(strings $module | awk '/OpenAFS/ {sub("^.*OpenAFS\\s*",""); print $1}')
     pkg_version=$(fs --version | awk '{print $2}')
     if [ "$mod_version" != "$pkg_version" ]; then
       rm "$module"
