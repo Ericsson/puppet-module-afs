@@ -287,7 +287,7 @@ rm_wrong_module() {
 
   module="$(modinfo -F filename $AFS_KERNEL_MODULE 2>/dev/null)"
   if [ -f "$module" ]; then
-    mod_version=$(strings $module | grep OpenAFS | awk '{print $3}')
+    mod_version=$(strings $module | awk '/OpenAFS/ {sub("^.*OpenAFS\\\s*",""); print $1}')
     pkg_version=$(fs --version | awk '{print $2}')
     if [ "$mod_version" != "$pkg_version" ]; then
       rm $module
