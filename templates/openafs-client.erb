@@ -21,7 +21,7 @@
 # the cache-size should not be bigger than 95% of the partition-size. The client will not start if cache-size is bigger!
 # Default value is 1GB, size should be monitored and then be adjusted. On Terminal-servers 3-4GB is a good starting point.
 # Due to a bug in OpenAFS for Solaris11: Don't use ZFS for cache. Systems using UFS are not affected (even if the UFS filesystem is on a ZFS zvol)
-# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime"
+# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000"
 AFSD_ARGS="<%= @config_client_args_real %>"
 
 #
@@ -29,7 +29,7 @@ AFSD_ARGS="<%= @config_client_args_real %>"
 # Don't use more than 1GB for memory-cache!
 # Configured memory for memcache is completely reserved for AFS, cannot be used by something else, even if the afs-client doesn't use it!
 # Example for 1GB memcache ( by specifying -blocks to afsd the configuration in cacheinfo will be ignored ):
-# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -memcache -blocks 1000000 -chunksize 17 -nosettime"
+# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -memcache -blocks 1000000 -chunksize 17"
 
 #
 # This section is to enable a update_package feature in the startup-script via zypper (SLE) or yum (RHEL).
