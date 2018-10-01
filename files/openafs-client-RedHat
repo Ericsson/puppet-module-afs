@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Copyright (c) 2017 AFS-Core Ericsson
-# Version v1.16, 2017-06-20
+# Copyright (c) 2018 AFS-Core Ericsson
+# Version v1.17, 2018-09-27
 #
 # openafs-client	Start/Stop the OpenAFS Client
 #
@@ -14,6 +14,7 @@
 DAEMON_BIN=/usr/vice/etc/afsd
 AFS_KERNEL_MODULE=libafs
 AFS=/afs
+
 OPENAFS_VERSION=`rpm --queryformat '%{version}' -q openafs`
 OPENAFSDKMS=dkms-openafs
 CACHEDIR=/usr/vice/cache
@@ -46,12 +47,10 @@ lock_routine() {
     _lock()             { flock -$1 $LOCKFD; }
     _no_more_locking()  { _lock u; _lock xn && rm -f $LOCKFILE; }
     _prepare_locking()  { eval "exec $LOCKFD>\"$LOCKFILE\""; trap _no_more_locking EXIT; }
-  
     exlock_now()        { _lock xn; }  # obtain an exclusive lock immediately or fail
     exlock()            { _lock x; }   # obtain an exclusive lock
     shlock()            { _lock s; }   # obtain a shared lock
     unlock()            { _lock u; }   # drop a lock
-  
     _prepare_locking
     return 0
   else
@@ -66,6 +65,10 @@ setsuid() {
       fs setcell -cell $CELLS -suid
     done
   fi
+}
+
+setnocrypt() {
+  fs setcrypt -crypt off
 }
 
 firstint() {
@@ -348,6 +351,7 @@ start() {
     if [ $RETVAL -eq 0 ]; then
       setsysname
       setsuid
+      setnocrypt
       get_cell
       SETSERVERPREFS=/afs/$CELL/afsadm/sbin/afs_setserverprefs.sh
       # background job that should run after the AFS initialization...
