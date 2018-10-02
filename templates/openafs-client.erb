@@ -45,7 +45,7 @@ UPDATE="<%= @config_client_update_real %>"
 # This section is to control the AFS kernel module handling via DKMS or the openafs start-script.
 # At the moment only available on RHEL and Ubuntu platform. On SLE <= 11 no stable DKMS available.
 # It will be ignored on other platforms like Solaris.
-# The package openafs-kernel-source is needed for the compile start-script method.
+# The package openafs-kernel-source/(Ubuntu: openafs-modules-source) is needed for the compile start-script method.
 # For dkms the following packages are needed: dkms dkms-openafs
 # For both options packages to build kernel-modules are needed.
 # Available options: false | true
