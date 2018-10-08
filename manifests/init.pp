@@ -13,7 +13,7 @@ class afs (
   $afs_cron_job_monthday              = undef,
   $afs_cron_job_month                 = undef,
   $afs_cron_job_weekday               = undef,
-  $afs_suidcells                      = undef,
+  $afs_suidcells                      = [],
   $cache_path                         = 'USE_DEFAULTS',
   $cache_size                         = '1000000',
   $config_client_args                 = '-dynroot -afsdb -daemons 6 -volumes 1000',
@@ -130,7 +130,11 @@ class afs (
 
   $afs_cron_job_weekday_real = $afs_cron_job_weekday
 
-  $afs_suidcells_real = $afs_suidcells
+  case type3x($afs_suidcells) {
+    'array':  { $afs_suidcells_array = $afs_suidcells }
+    'string': { $afs_suidcells_array = any2array($afs_suidcells) }
+    default:  { fail('afs::afs_suidcells is not an array nor a string.') }
+  }
 
   $cache_path_real = $cache_path ? {
     'USE_DEFAULTS' => $cache_path_default,
@@ -247,9 +251,9 @@ class afs (
     fail('Only numbers are allowed in the afs::afs_cron_job_weekday param.')
   }
 
-  if ($afs_suidcells_real != undef) and (is_domain_name($afs_suidcells_real) != true) {
-    fail('Only domain names are allowed in the afs::afs_suidcells param.')
-  }
+  # stdlib/validate_domain_name() does not support arrays :(
+  # iterate through array of domain_names to validate them in Puppet 3 style
+  afs::validate_domain_names { $afs_suidcells_array: }
 
   validate_absolute_path($cache_path_real)
 
@@ -378,14 +382,14 @@ class afs (
     require => Common::Mkdir_p[$config_client_dir_real],
   }
 
-  if $afs_suidcells_real != undef {
+  if empty($afs_suidcells_array) == false {
     file { 'afs_config_suidcells' :
       ensure  => file,
       path    => "${afs_config_path_real}/SuidCells",
       owner   => 'root',
       group   => 'root',
       mode    => '0644',
-      content => "${afs_suidcells_real}\n",
+      content => template('afs/suidcells.erb'),
       require => Common::Mkdir_p[$afs_config_path_real],
     }
   }
