@@ -9,7 +9,7 @@
 # Since 1.6.x the afs-client has integrated auto-tuning.
 # So specifying more options for tuning should only be applied after monitoring the system.
 # candidates for tuning: -stat , -volumes
-# -nosettime option is only needed for older 1.4.x clients. It's the default on 1.6.x clients but can be set to have a equal configuration.
+# -nosettime option is deprecated on 1.6.x and newer clients. Should not be used anymore.
 
 #
 # Disk-cache options
@@ -20,8 +20,9 @@
 # If the cache-directory (RHEL + Solaris) /usr/vice/cache or (SLE + Ubuntu) /var/cache/openafs is on a separate partition,
 # the cache-size should not be bigger than 95% of the partition-size. The client will not start if cache-size is bigger!
 # Default value is 1GB, size should be monitored and then be adjusted. On Terminal-servers 3-4GB is a good starting point.
-# Due to a bug in OpenAFS for Solaris11: Don't use ZFS for cache. Systems using UFS are not affected (even if the UFS filesystem is on a ZFS zvol)
-# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime"
+# Due to a bug in OpenAFS<1.6.11 for Solaris11 and newer: Don't use ZFS for cache if openafs-version is older than 1.6.11.
+# Systems using UFS are not affected (even if the UFS filesystem is on a ZFS zvol)
+# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000"
 AFSD_ARGS="<%= @config_client_args_real %>"
 
 #
@@ -29,13 +30,13 @@ AFSD_ARGS="<%= @config_client_args_real %>"
 # Don't use more than 1GB for memory-cache!
 # Configured memory for memcache is completely reserved for AFS, cannot be used by something else, even if the afs-client doesn't use it!
 # Example for 1GB memcache ( by specifying -blocks to afsd the configuration in cacheinfo will be ignored ):
-# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -memcache -blocks 1000000 -chunksize 17 -nosettime"
+# AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000 -memcache -blocks 1000000 -chunksize 17"
 
 #
 # This section is to enable a update_package feature in the startup-script via zypper (SLE) or yum (RHEL).
 # At the moment only available on Linux platform (SLE + RHEL).
 # It will be ignored on other platforms.
-# The client need a configured and activated repository which includes the needed AFS packages.
+# The client needs a configured and activated repository that includes the needed AFS packages.
 # Available options: false | true
 # UPDATE="false"
 UPDATE="<%= @config_client_update_real %>"
@@ -43,8 +44,8 @@ UPDATE="<%= @config_client_update_real %>"
 #
 # This section is to control the AFS kernel module handling via DKMS or the openafs start-script.
 # At the moment only available on RHEL and Ubuntu platform. On SLE <= 11 no stable DKMS available.
-# It will be ignored on other platformsi like Solaris.
-# The package openafs-kernel-source is needed for the compile start-script method.
+# It will be ignored on other platforms like Solaris.
+# The package openafs-kernel-source/(Ubuntu: openafs-modules-source) is needed for the compile start-script method.
 # For dkms the following packages are needed: dkms dkms-openafs
 # For both options packages to build kernel-modules are needed.
 # Available options: false | true
