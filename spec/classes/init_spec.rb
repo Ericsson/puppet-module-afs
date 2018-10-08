@@ -141,7 +141,7 @@ describe 'afs' do
             'before'  => 'Service[afs_openafs_client_service]',
           })
         }
-        it { should contain_file('afs_config_client').with_content(/^AFSD_ARGS=\"-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime\"$/) }
+        it { should contain_file('afs_config_client').with_content(/^AFSD_ARGS=\"-dynroot -afsdb -daemons 6 -volumes 1000\"$/) }
         it { should contain_file('afs_config_client').with_content(/^UPDATE=\"false\"$/) }
         it { should contain_file('afs_config_client').with_content(/^DKMS=\"#{v[:config_client_dkms_default]}\"$/) }
         it { should contain_file('afs_config_client').with_content(/^CLEANCACHE=\"false\"$/) }
