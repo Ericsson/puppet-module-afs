@@ -445,7 +445,7 @@ describe 'afs' do
         :name    => %w(config_client_clean_cache_on_start),
         :valid   => [true, 'false'],
         :invalid => ['string', %w(array), { 'ha' => 'sh' }, 3, 2.42, nil],
-        :message => '(Unknown type of boolean given|Requires either string to work with)',
+        :message => '(Unknown type of boolean given|Requires string to work with)',
       },
     }
 
