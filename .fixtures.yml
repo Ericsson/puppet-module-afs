@@ -8,6 +8,6 @@ fixtures:
       ref:  '1.0.0'
     'stdlib':
       repo: 'https://github.com/puppetlabs/puppetlabs-stdlib.git'
-      ref:  '4.6.0'
+      ref:  '4.19.0'
   symlinks:
     afs: "#{source_dir}"

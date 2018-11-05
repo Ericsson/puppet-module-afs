@@ -159,10 +159,10 @@ If set to <undef> it will become '*' at creation time.
 
 afs_suidcells
 -------------
-String with content of the file $afs_config_path/SuidCells.
+Array of strings with content of the file $afs_config_path/SuidCells.
 This file will be ignored if the default value is not changed.
 
-- *Default*: undef
+- *Default*: []
 
 
 cache_path

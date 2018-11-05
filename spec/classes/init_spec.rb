@@ -146,6 +146,9 @@ describe 'afs' do
         it { should contain_file('afs_config_client').with_content(/^DKMS=\"#{v[:config_client_dkms_default]}\"$/) }
         it { should contain_file('afs_config_client').with_content(/^CLEANCACHE=\"false\"$/) }
 
+        # file { 'afs_config_suidcells': }
+        it { should_not contain_file('afs_config_suidcells') }
+
         # service { 'afs_openafs_client_service':}
         it {
           should contain_service('afs_openafs_client_service').with({
@@ -225,22 +228,6 @@ describe 'afs' do
       }
     end
 
-    context "where afs_suidcells is <sunset.github.com>" do
-      # file { 'afs_config_suidcells' :}
-      it {
-        should contain_file('afs_config_suidcells').with({
-          'ensure' => 'file',
-          'path'   => '/usr/vice/etc/SuidCells',
-          'owner'  => 'root',
-          'group'  => 'root',
-          'mode'   => '0644',
-          'require' =>'Common::Mkdir_p[/usr/vice/etc]',
-          'before'  => 'Service[afs_openafs_client_service]',
-        })
-      }
-      it { should contain_file('afs_config_suidcells').with_content(/^sunset.github.com$/) }
-    end
-
     context "where afs_cell is <sunset.github.com>" do
       # file { 'afs_config_thiscell' :}
       it {
@@ -272,6 +259,68 @@ describe 'afs' do
       }
       it { should contain_file('afs_config_cellserverdb').with_content(/^>sunset.github.com\\t#Sunset$/) }
     end
+
+    context "where afs_suidcells is <sunset.github.com>" do
+      # file { 'afs_config_suidcells' :}
+      it {
+        should contain_file('afs_config_suidcells').with({
+          'ensure' => 'file',
+          'path'   => '/usr/vice/etc/SuidCells',
+          'owner'  => 'root',
+          'group'  => 'root',
+          'mode'   => '0644',
+          'require' =>'Common::Mkdir_p[/usr/vice/etc]',
+          'before'  => 'Service[afs_openafs_client_service]',
+        })
+      }
+      it { should contain_file('afs_config_suidcells').with_content(/^sunset.github.com\n$/) }
+    end
+
+    context "where afs_suidcells is [sunset.github.com, sunset.gitlab.com]" do
+      let :params do
+        {
+          :afs_suidcells => %w(sunset.github.com sunset.gitlab.com),
+        }
+      end
+      # file { 'afs_config_suidcells' :}
+      it {
+        should contain_file('afs_config_suidcells').with({
+          'ensure' => 'file',
+          'path'   => '/usr/vice/etc/SuidCells',
+          'owner'  => 'root',
+          'group'  => 'root',
+          'mode'   => '0644',
+          'require' =>'Common::Mkdir_p[/usr/vice/etc]',
+          'before'  => 'Service[afs_openafs_client_service]',
+        })
+      }
+      it { should contain_file('afs_config_suidcells').with_content(/^sunset.github.com\nsunset.gitlab.com\n$/) }
+    end
+
+    context "where afs_suidcells is <domain.c0m> as string" do
+      let :params do
+        {
+          :afs_suidcells => 'domain.c0m',
+        }
+      end
+
+      it 'should fail' do
+        expect { should contain_class(subject) }.to raise_error(Puppet::Error, /is not a syntactically correct domain name/)
+      end
+    end
+
+    context "where afs_suidcells is [-invalid domain.c0m] as array" do
+      let :params do
+        {
+          :afs_suidcells => %w(-invalid domain.c0m),
+        }
+      end
+
+      it 'should fail' do
+        expect { should contain_class(subject) }.to raise_error(Puppet::Error, /is not a syntactically correct domain name/)
+      end
+    end
+
   end
 
   describe "with Solaris specific parameters set" do
@@ -445,7 +494,13 @@ describe 'afs' do
         :name    => %w(config_client_clean_cache_on_start),
         :valid   => [true, 'false'],
         :invalid => ['string', %w(array), { 'ha' => 'sh' }, 3, 2.42, nil],
-        :message => '(Unknown type of boolean given|Requires either string to work with)',
+        :message => '(Unknown type of boolean given|Requires string to work with)',
+      },
+      'array / string' => {
+        :name    => %w(afs_suidcells),
+        :valid   => ['domain', %w(multiple domains)],
+        :invalid => ['-invalid', { 'ha' => 'sh' }, 3, 2.42, false],
+        :message => '(is not an array nor a string|is not a syntactically correct domain name)',
       },
     }
 
