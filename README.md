@@ -22,6 +22,10 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 
 # Version history #
+* 1.5.2 2018-10-24 Support Puppet 6
+* 1.5.1 2018-10-08 Startup script improvments & remove -nosettime
+* 1.5.0 2018-09-26 Support Puppet 5
+* 1.4.1 2017-06-28 Add docs
 * 1.4.0 2017-06-27
   * Add functionality to clear client caches on start
   * Updates RedHat init script to v1.16

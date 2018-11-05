@@ -3,6 +3,9 @@ fixtures:
     'common':
       repo: 'https://github.com/ghoneycutt/puppet-module-common.git'
       ref:  'v1.3.0'
+    'cron_core':
+      repo: 'https://github.com/puppetlabs/puppetlabs-cron_core'
+      ref:  '1.0.0'
     'stdlib':
       repo: 'https://github.com/puppetlabs/puppetlabs-stdlib.git'
       ref:  '4.19.0'
