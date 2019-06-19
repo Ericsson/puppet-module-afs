@@ -22,6 +22,7 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 
 # Version history #
+* 1.6.1 2019-06-19 Startup script and dkms improvements
 * 1.6.0 2018-11-05 Add support for mulitple suidcells
 * 1.5.2 2018-10-24 Support Puppet 6
 * 1.5.1 2018-10-08 Startup script improvments & remove -nosettime
