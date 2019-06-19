@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Copyright (c) 2018 AFS-Core Ericsson
-# Version v1.18, 2018-10-01
+# Copyright (c) 2019 AFS-Core Ericsson
+# Version v1.19, 2019-05-13
 #
 # openafs-client	Start/Stop the OpenAFS Client
 #
@@ -178,25 +178,46 @@ dkms_check() {
 check_kernelmodule() {
   KERNEL_VERSION=$(uname -r)
   if dkms_check; then
-    dkms status -m $AFS_KERNEL_MODULE -k "$KERNEL_VERSION" | grep -w 'installed-weak' >/dev/null
+    OPENAFS_VERSION_FULL=$(rpm --queryformat '%{PROVIDEVERSION}' -q openafs)
+    dkms status -m $AFS_KERNEL_MODULE -k "$KERNEL_VERSION" | egrep 'installed-weak|Diff between built and installed module' >/dev/null
     if [ $? -eq 0 ]; then
       echo
       echo "Weak module detected, will be removed.."
+      echo "DKMS stuff ..."
+      dkms remove "$AFS_KERNEL_MODULE/$OPENAFS_VERSION_FULL" -k "$KERNEL_VERSION" --no-initrd
       if [ -h /lib/modules/"$KERNEL_VERSION"/weak-updates/${AFS_KERNEL_MODULE}.ko ]; then
+        TARGETLINK=$(readlink -f /lib/modules/"$KERNEL_VERSION"/weak-updates/${AFS_KERNEL_MODULE}.ko)
         rm -fv /lib/modules/"$KERNEL_VERSION"/weak-updates/${AFS_KERNEL_MODULE}.ko
       fi
+      if [ -h /lib/modules/"$KERNEL_VERSION"/weak-updates/${AFS_KERNEL_MODULE}.ko.xz ]; then
+        TARGETLINKXZ=$(readlink -f /lib/modules/"$KERNEL_VERSION"/weak-updates/${AFS_KERNEL_MODULE}.ko.xz)
+        rm -fv /lib/modules/"$KERNEL_VERSION"/weak-updates/${AFS_KERNEL_MODULE}.ko.xz
+      fi
       echo
-      echo "DKMS stuff ..."
-      dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver "$KERNEL_VERSION"
+      if ! dkms install "$AFS_KERNEL_MODULE/$OPENAFS_VERSION_FULL" -k "$KERNEL_VERSION" --no-initrd; then
+        echo "DKMS install problem for $AFS_KERNEL_MODULE/$OPENAFS_VERSION_FULL $KERNEL_VERSION, will try to relink from other kernel version..."
+        if [ -n "$TARGETLINK" ]; then
+          if [ -f "$TARGETLINK" ]; then
+            echo "Using $TARGETLINK"
+            ln -s "$TARGETLINK" "/lib/modules/$KERNEL_VERSION/weak-updates/${AFS_KERNEL_MODULE}.ko"
+          fi
+        fi
+        if [ -n "$TARGETLINKXZ" ]; then
+          if [ -n "$TARGETLINKXZ" ]; then
+            echo "Using $TARGETLINKXZ"
+            ln -s "$TARGETLINKXZ" "/lib/modules/$KERNEL_VERSION/weak-updates/${AFS_KERNEL_MODULE}.ko.xz"
+          fi
+        fi
+      fi
     fi
     dkms status -m $AFS_KERNEL_MODULE -k "$KERNEL_VERSION" | grep ': installed$' >/dev/null
     if [ $? -ne 0 ]; then
       echo
       echo "No kernel-module detected for $AFS_KERNEL_MODULE version $OPENAFS_VERSION_FULL and kernel $KERNEL_VERSION .."
       echo "DKMS stuff ..."
-      OPENAFS_VERSION_FULL=$(rpm --queryformat '%{PROVIDEVERSION}' -q openafs)
-      dkms add -m $AFS_KERNEL_MODULE -v $OPENAFS_VERSION_FULL --kernelver "$KERNEL_VERSION"
-      dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver "$KERNEL_VERSION"
+      if ! dkms install "$AFS_KERNEL_MODULE/$OPENAFS_VERSION_FULL" -k "$KERNEL_VERSION" --no-initrd; then
+        echo "DKMS install problem for $AFS_KERNEL_MODULE/$OPENAFS_VERSION_FULL $KERNEL_VERSION"
+      fi
     fi
     return 0
   fi

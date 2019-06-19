@@ -1,7 +1,7 @@
-#! /bin/bash
+#!/bin/bash
 #
-# Copyright (c) 2018 AFS-Core Ericsson
-# Version v1.18, 2018-10-01
+# Copyright (c) 2019 AFS-Core Ericsson
+# Version v1.19, 2019-06-14
 #
 # System startup script for OpenAFS
 #
@@ -134,25 +134,25 @@ setsysname() {
     fi
   done
   case "$_DIST" in
-  novell | SuSE)
-    if grep -qi openSUSE /etc/${_DIST}-release; then
-      _DIST="osuse"
-    else
-      _DIST="sle"
-    fi
-    ;;
-  redhat | centos)
-    _DIST="rhel"
-    ;;
-  fedora)
-    _DIST="fc"
-    ;;
-  Ubuntu)
-    _DIST="ubunt"
-    ;;
-  *)
-    return
-    ;;
+    novell | SuSE)
+      if grep -qi openSUSE /etc/${_DIST}-release; then
+        _DIST="osuse"
+      else
+        _DIST="sle"
+      fi
+      ;;
+    redhat | centos)
+      _DIST="rhel"
+      ;;
+    fedora)
+      _DIST="fc"
+      ;;
+    Ubuntu)
+      _DIST="ubunt"
+      ;;
+    *)
+      return
+      ;;
   esac
 
   # Sysname list.  The order here is from specific to general, with a
@@ -198,7 +198,7 @@ check_kernelmodule() {
     exlock_now || {
       echo
       echo " -> Lock-file $LOCKFILE exists! Will exit now."
-      exit 1
+      exit 0
     }
   fi
   echo
@@ -256,22 +256,24 @@ package_update() {
       exlock_now || {
         echo
         echo " -> Lock-file $LOCKFILE exists! Will exit now."
-        exit 1
+        exit 0
       }
     fi
     echo
     zypper --no-gpg-checks refresh
-    package_status=$(zypper --no-gpg-checks info openafs 2>/dev/null | grep ^Status | awk '{print $2}')
+    package_status=$(zypper --no-gpg-checks info openafs 2>/dev/null | grep ^Status | cut -d: -f2 | awk '{print $1}')
     if [ "$package_status" == "out-of-date" ]; then
       echo "Upgrading OpenAFS"
       zypper -q -V >/dev/null 2>&1
       RETVAL=$?
       if [ $RETVAL -eq 0 ]; then
+        # --allow-vendor-change
         ZYPPEROPTS="-q"
       else
         ZYPPEROPTS=""
       fi
       zypper --no-gpg-checks $ZYPPEROPTS -n in openafs openafs-docs openafs-krb5-mit openafs-client openafs-kernel-source 2>/dev/null
+      # Make a clean cache in case of package upgrades, even if option is not set.
       if [ "$CLEANCACHE" != "true" ]; then
         if [ "${CACHEDIR}" == "/usr/vice/cache" ] || [ "${CACHEDIR}" == "/var/cache/openafs" ]; then
           if [ -d ${CACHEDIR} ]; then
@@ -305,162 +307,162 @@ rc_reset
 # considered a success.
 
 case "$1" in
-start)
-  if noroot_check; then
-    echo "Script has to be run as root"
-    exit 4
-  fi
-  echo "Starting $DAEMON "
-  mkdir -p $AFS
-  if grep -q ^$AFS_KERNEL_MODULE /proc/modules; then
-    echo -n "  -> $DAEMON already running "
-  else
-    # A configured zypper repository is needed for the package-update
-    package_update
-    rm_wrong_module
-    if check_kernelmodule; then
-      ps ax | grep -q '\[afsd\]'
-      if [ $? -ne 0 ]; then
-        if [ "$CLEANCACHE" == "true" ]; then
-          if [ "${CACHEDIR}" == "/usr/vice/cache" ] || [ "${CACHEDIR}" == "/var/cache/openafs" ]; then
-            if [ -d ${CACHEDIR} ]; then
-              echo "Cleaning up cache area ${CACHEDIR}/ ..."
-              rm -rf ${CACHEDIR:?}/*
+  start)
+    if noroot_check; then
+      echo "Script has to be run as root"
+      exit 4
+    fi
+    echo "Starting $DAEMON "
+    mkdir -p $AFS
+    if grep -q ^$AFS_KERNEL_MODULE /proc/modules; then
+      echo -n "  -> $DAEMON already running "
+    else
+      # A configured zypper repository is needed for the package-update
+      package_update
+      rm_wrong_module
+      if check_kernelmodule; then
+        ps ax | grep -q '\[afsd\]'
+        if [ $? -ne 0 ]; then
+          if [ "$CLEANCACHE" == "true" ]; then
+            if [ "${CACHEDIR}" == "/usr/vice/cache" ] || [ "${CACHEDIR}" == "/var/cache/openafs" ]; then
+              if [ -d ${CACHEDIR} ]; then
+                echo "Cleaning up cache area ${CACHEDIR}/ ..."
+                rm -rf ${CACHEDIR:?}/*
+              fi
+            else
+              echo "Cache area CACHEDIR ${CACHEDIR} not set correctly for cleanup-job in startup-script."
             fi
+          fi
+          $DAEMON_BIN $AFSD_ARGS
+          RETVAL=$?
+          if [ $RETVAL -eq 0 ]; then
+            setsysname
+            setsuid
+            setnocrypt
+            get_cell
+            SETSERVERPREFS=/afs/$CELL/afsadm/sbin/afs_setserverprefs.sh
+            # background job that should run after the AFS initialization...
+            (
+              sleep 60
+              [ -x $SETSERVERPREFS ] && $SETSERVERPREFS
+            ) </dev/null >/dev/null 2>&1 &
           else
-            echo "Cache area CACHEDIR ${CACHEDIR} not set correctly for cleanup-job in startup-script."
+            rc_failed 1
           fi
         fi
-        $DAEMON_BIN $AFSD_ARGS
-        RETVAL=$?
-        if [ $RETVAL -eq 0 ]; then
-          setsysname
-          setsuid
-          setnocrypt
-          get_cell
-          SETSERVERPREFS=/afs/$CELL/afsadm/sbin/afs_setserverprefs.sh
-          # background job that should run after the AFS initialization...
-          (
-            sleep 60
-            [ -x $SETSERVERPREFS ] && $SETSERVERPREFS
-          ) </dev/null >/dev/null 2>&1 &
-        else
-          rc_failed 1
-        fi
+      else
+        #modprobe failed
+        rc_failed 5
+      fi
+    fi
+    # Remember status and be verbose
+    rc_status -v
+    ;;
+  stop)
+    if noroot_check; then
+      echo "Script has to be run as root"
+      exit 4
+    fi
+    echo -n "Shutting down $DAEMON "
+    if ps ax | grep -q '\[afsd\]'; then
+      umount $AFS
+      RETVAL=$?
+      if [ $RETVAL -eq 0 ]; then
+        $DAEMON_BIN -shutdown
       fi
     else
-      #modprobe failed
-      rc_failed 5
+      echo -n " -> $DAEMON not running "
+      RETVAL=0
     fi
-  fi
-  # Remember status and be verbose
-  rc_status -v
-  ;;
-stop)
-  if noroot_check; then
-    echo "Script has to be run as root"
-    exit 4
-  fi
-  echo -n "Shutting down $DAEMON "
-  if ps ax | grep -q '\[afsd\]'; then
-    umount $AFS
-    RETVAL=$?
     if [ $RETVAL -eq 0 ]; then
+      if grep -q ^$AFS_KERNEL_MODULE /proc/modules; then
+        rmmod $AFS_KERNEL_MODULE || rc_failed 1
+      fi
+    else
+      rc_failed 1
+    fi
+    # rmtsys doesn't go away, so kill them all to be sure
+    #killall $DAEMON_BIN > /dev/null 2>&1
+    # Remember status and be verbose
+    rc_status -v
+    ;;
+  stop-force)
+    if noroot_check; then
+      echo "Script has to be run as root"
+      exit 4
+    fi
+    echo -n "Shutting down $DAEMON "
+    if ps ax | grep -q '\[afsd\]'; then
+      echo
+      echo "Sending all processes using $AFS the TERM signal ..."
+      killafs TERM
+      echo "Sending all processes using $AFS the KILL signal ..."
+      killafs KILL
+      umount $AFS
       $DAEMON_BIN -shutdown
     fi
-  else
-    echo -n " -> $DAEMON not running "
-    RETVAL=0
-  fi
-  if [ $RETVAL -eq 0 ]; then
     if grep -q ^$AFS_KERNEL_MODULE /proc/modules; then
       rmmod $AFS_KERNEL_MODULE || rc_failed 1
     fi
-  else
-    rc_failed 1
-  fi
-  # rmtsys doesn't go away, so kill them all to be sure
-  #killall $DAEMON_BIN > /dev/null 2>&1
-  # Remember status and be verbose
-  rc_status -v
-  ;;
-stop-force)
-  if noroot_check; then
-    echo "Script has to be run as root"
-    exit 4
-  fi
-  echo -n "Shutting down $DAEMON "
-  if ps ax | grep -q '\[afsd\]'; then
-    echo
-    echo "Sending all processes using $AFS the TERM signal ..."
-    killafs TERM
-    echo "Sending all processes using $AFS the KILL signal ..."
-    killafs KILL
-    umount $AFS
-    $DAEMON_BIN -shutdown
-  fi
-  if grep -q ^$AFS_KERNEL_MODULE /proc/modules; then
-    rmmod $AFS_KERNEL_MODULE || rc_failed 1
-  fi
-  # rmtsys doesn't go away, so kill them all to be sure
-  #killall $DAEMON_BIN > /dev/null 2>&1
-  # Remember status and be verbose
-  rc_status -v
-  ;;
-try-restart)
-  ## Stop the service and if this succeeds (i.e. the
-  ## service was running before), start it again.
-  $0 stop && $0 start
+    # rmtsys doesn't go away, so kill them all to be sure
+    #killall $DAEMON_BIN > /dev/null 2>&1
+    # Remember status and be verbose
+    rc_status -v
+    ;;
+  try-restart)
+    ## Stop the service and if this succeeds (i.e. the
+    ## service was running before), start it again.
+    $0 stop && $0 start
 
-  # Remember status and be quiet
-  rc_status
-  ;;
-restart)
-  ## Stop the service and regardless of whether it was
-  ## running or not, start it again.
-  $0 stop
-  $0 start
+    # Remember status and be quiet
+    rc_status
+    ;;
+  restart)
+    ## Stop the service and regardless of whether it was
+    ## running or not, start it again.
+    $0 stop
+    $0 start
 
-  # Remember status and be quiet
-  rc_status
-  ;;
-status)
-  echo -n "Checking for $DAEMON: "
-  ## Check status with checkproc(8), if process is running
-  ## checkproc will return with exit status 0.
+    # Remember status and be quiet
+    rc_status
+    ;;
+  status)
+    echo -n "Checking for $DAEMON: "
+    ## Check status with checkproc(8), if process is running
+    ## checkproc will return with exit status 0.
 
-  # Status has a slightly different for the status command:
-  # 0 - service running
-  # 1 - service dead, but /var/run/  pid  file exists
-  # 2 - service dead, but /var/lock/ lock file exists
-  # 3 - service not running
+    # Status has a slightly different for the status command:
+    # 0 - service running
+    # 1 - service dead, but /var/run/  pid  file exists
+    # 2 - service dead, but /var/lock/ lock file exists
+    # 3 - service not running
 
-  # NOTE: checkproc returns LSB compliant status values.
+    # NOTE: checkproc returns LSB compliant status values.
 
-  ps ax | grep -q '\[afsd\]' || rc_failed 3
+    ps ax | grep -q '\[afsd\]' || rc_failed 3
 
-  rc_status -v
-  ;;
-check)
-  echo -n "Checking $DAEMON "
-  if ps ax | grep -q '\[afsd\]'; then
-    get_cell
-    HEALTHCHECK=/afs/$CELL/afsadm/bin/afs_site_health_check.sh
-    if [ -x $HEALTHCHECK ]; then
-      $HEALTHCHECK
+    rc_status -v
+    ;;
+  check)
+    echo -n "Checking $DAEMON "
+    if ps ax | grep -q '\[afsd\]'; then
+      get_cell
+      HEALTHCHECK=/afs/$CELL/afsadm/bin/afs_site_health_check.sh
+      if [ -x $HEALTHCHECK ]; then
+        $HEALTHCHECK
+      else
+        echo -n $"Check-script not available: $HEALTHCHECK"
+        echo
+        RETVAL=1
+      fi
     else
-      echo -n $"Check-script not available: $HEALTHCHECK"
-      echo
-      RETVAL=1
+      echo -n " -> $DAEMON not running "
+      RETVAL=0
     fi
-  else
-    echo -n " -> $DAEMON not running "
-    RETVAL=0
-  fi
-  ;;
-*)
-  echo "Usage: $0 {start|stop|stop-force|status|check|try-restart|restart}"
-  exit 1
-  ;;
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|stop-force|status|check|try-restart|restart}"
+    exit 1
+    ;;
 esac
 rc_exit
