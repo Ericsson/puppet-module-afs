@@ -343,7 +343,7 @@ class afs (
     }
   }
 
-  if ($::osfamily == 'Suse' and $::operatingsystemrelease == '12') {
+  if ($::osfamily == 'Suse' and $::operatingsystemrelease =~ /12|15/) {
     file_line { 'allow_unsupported_modules':
       ensure => 'present',
       path   => '/etc/modprobe.d/10-unsupported-modules.conf',
