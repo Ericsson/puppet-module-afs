@@ -24,9 +24,31 @@ describe 'afs' do
         :init_template_default      => 'openafs-client-RedHat',
         :package_name_default       => [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686' ],
       },
-    'Suse' =>
+    'Suse11' =>
       { :osfamily                   => 'Suse',
         :osrelease                  => '11',
+        :afs_config_path_default    => '/etc/openafs',
+        :cache_path_default         => '/var/cache/openafs',
+        :config_client_dkms_default => false,
+        :config_client_path_default => '/etc/sysconfig/openafs-client',
+        :init_script_default        => '/etc/init.d/openafs-client',
+        :init_template_default      => 'openafs-client-Suse',
+        :package_name_default       => [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit' ],
+      },
+    'Suse12' =>
+      { :osfamily                   => 'Suse',
+        :osrelease                  => '12',
+        :afs_config_path_default    => '/etc/openafs',
+        :cache_path_default         => '/var/cache/openafs',
+        :config_client_dkms_default => false,
+        :config_client_path_default => '/etc/sysconfig/openafs-client',
+        :init_script_default        => '/etc/init.d/openafs-client',
+        :init_template_default      => 'openafs-client-Suse',
+        :package_name_default       => [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit' ],
+      },
+    'Suse15' =>
+      { :osfamily                   => 'Suse',
+        :osrelease                  => '15',
         :afs_config_path_default    => '/etc/openafs',
         :cache_path_default         => '/var/cache/openafs',
         :config_client_dkms_default => false,
@@ -193,23 +215,25 @@ describe 'afs' do
       it { should_not contain_file('afs_cron_job') }
     end
 
-    context "where osfamily is <Suse> and operatingsystemrelease is <12>" do
-      let :facts do
-        { :osfamily               => 'Suse',
-          :operatingsystemrelease => '12',
-          :is_virtual             => nil,
+    ['12','15'].each do |release|
+      context "where osfamily is <Suse> and operatingsystemrelease is #{release}" do
+        let :facts do
+          { :osfamily               => 'Suse',
+            :operatingsystemrelease => release,
+            :is_virtual             => nil,
+          }
+        end
+
+        it {
+          should contain_file_line('allow_unsupported_modules').with({
+            'ensure' => 'present',
+            'path'   => '/etc/modprobe.d/10-unsupported-modules.conf',
+            'line'   => 'allow_unsupported_modules 1',
+            'match'  => '^allow_unsupported_modules 0$',
+            'before' => 'Service[afs_openafs_client_service]',
+          })
         }
       end
-
-      it {
-        should contain_file_line('allow_unsupported_modules').with({
-          'ensure' => 'present',
-          'path'   => '/etc/modprobe.d/10-unsupported-modules.conf',
-          'line'   => 'allow_unsupported_modules 1',
-          'match'  => '^allow_unsupported_modules 0$',
-          'before' => 'Service[afs_openafs_client_service]',
-        })
-      }
     end
 
   end
