@@ -1,6 +1,6 @@
 {
   "name": "kodguru-afs",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "author": "kodguru",
   "summary": "Manage OpenAFS",
   "license": "Apache-2.0",
@@ -30,7 +30,7 @@
     },
     {
       "operatingsystem": "SLES",
-      "operatingsystemrelease": ["10","11","12"]
+      "operatingsystemrelease": ["10","11","12","15"]
     },
     {
       "operatingsystem": "SLED",
