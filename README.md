@@ -8,15 +8,15 @@ The module installs and configures OpenAFS.
 # Compatability #
 
 This module has been tested to work on the following systems with Puppet v3
-(with and without the future parser) and Puppet v4 with Ruby versions 1.8.7,
-1.9.3, 2.0.0, 2.1.0 and 2.3.1.
+(with and without the future parser) and ruby versions 1.9.3, 2.0.0 and 2.1.9,
+Puppet v4, Puppet v5 and Puppet v6.
 
 This module provides OS default values for these OSfamilies:
 
  * RedHat 5/6/7
  * Solaris 10
- * Suse 10/11/12
- * Ubuntu 12.04/14.04
+ * Suse 10/11/12/15
+ * Ubuntu 12.04/14.04/16.04/18.04
 
 For other OSfamilies support, please specify all parameters which defaults to 'USE_DEFAULTS'.
 
