@@ -1,0 +1,15 @@
+---
+
+afs::afs_config_path: /etc/openafs
+afs::cache_path: /var/cache/openafs
+afs::config_client_dkms: true
+afs::config_client_path: /etc/default/openafs-client
+afs::init_script: /etc/init.d/openafs-client
+afs::init_template: openafs-client-Ubuntu
+afs::package_name:
+  - openafs-client
+  - openafs-doc
+  - openafs-modules-source
+  - openafs-modules-dkms
+  - openafs-krb5
+  - dkms

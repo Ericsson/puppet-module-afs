@@ -23,7 +23,7 @@
 # Due to a bug in OpenAFS<1.6.11 for Solaris11 and newer: Don't use ZFS for cache if openafs-version is older than 1.6.11.
 # Systems using UFS are not affected (even if the UFS filesystem is on a ZFS zvol)
 # AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000"
-AFSD_ARGS="<%= @config_client_args_real %>"
+AFSD_ARGS="<%= @config_client_args %>"
 
 #
 # Memory-cache should only be used on diskless systems!
@@ -39,7 +39,7 @@ AFSD_ARGS="<%= @config_client_args_real %>"
 # The client needs a configured and activated repository that includes the needed AFS packages.
 # Available options: false | true
 # UPDATE="false"
-UPDATE="<%= @config_client_update_real %>"
+UPDATE="<%= @config_client_update %>"
 
 #
 # This section is to control the AFS kernel module handling via DKMS or the openafs start-script.
@@ -50,7 +50,7 @@ UPDATE="<%= @config_client_update_real %>"
 # For both options packages to build kernel-modules are needed.
 # Available options: false | true
 # DKMS="true"
-DKMS="<%= @config_client_dkms_real %>"
+DKMS="<%= @config_client_dkms %>"
 
 #                                                                       #
 # This section is to control the AFS cache area cleanup before starting the afsd.
@@ -59,4 +59,4 @@ DKMS="<%= @config_client_dkms_real %>"
 # Available options: false | true
 #
 # CLEANCACHE="false"
-CLEANCACHE="<%= @config_client_clean_cache_on_start_string %>"
+CLEANCACHE="<%= @config_client_clean_cache_on_start %>"

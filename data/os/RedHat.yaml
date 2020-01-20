@@ -1,0 +1,18 @@
+---
+
+afs::afs_config_path: /usr/vice/etc
+afs::cache_path: /usr/vice/cache
+afs::config_client_dkms: true
+afs::config_client_path: /etc/sysconfig/openafs-client
+afs::init_script: /etc/init.d/openafs-client
+afs::init_template: openafs-client-RedHat
+afs::package_name:
+  - openafs
+  - openafs-client
+  - openafs-docs
+  - openafs-compat
+  - openafs-krb5
+  - dkms
+  - dkms-openafs
+  - glibc-devel
+  - libgcc.i686

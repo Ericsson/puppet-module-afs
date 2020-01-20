@@ -1,0 +1,14 @@
+---
+
+afs::afs_config_path: /etc/openafs
+afs::cache_path: /var/cache/openafs
+afs::config_client_dkms: false
+afs::config_client_path: /etc/sysconfig/openafs-client
+afs::init_script: /etc/init.d/openafs-client
+afs::init_template: openafs-client-Suse
+afs::package_name:
+  - openafs
+  - openafs-client
+  - openafs-docs
+  - openafs-kernel-source
+  - openafs-krb5-mit
