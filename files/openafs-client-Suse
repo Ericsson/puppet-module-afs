@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Copyright (c) 2019 AFS-Core Ericsson
-# Version v1.21, 2019-12-19
+# Copyright (c) 2020 AFS-Core Ericsson
+# Version v1.22, 2020-01-10
 #
 # System startup script for OpenAFS
 #
@@ -48,7 +48,7 @@ export PATH
 [ -f /etc/sysconfig/openafs-client ] && . /etc/sysconfig/openafs-client
 
 # Set the minimum required options for afsd if no options set in /etc/sysconfig/openafs-client
-AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb -nosettime"}
+AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb"}
 UPDATE=${UPDATE:-"false"}
 CLEANCACHE=${CLEANCACHE:-"false"}
 
