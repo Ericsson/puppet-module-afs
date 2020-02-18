@@ -1,0 +1,19 @@
+[Unit]
+Description=OpenAFS Client Service
+Wants=network-online.target
+After=syslog.target network-online.target
+Before=remote-fs.target
+
+[Service]
+Type=forking
+Restart=no
+TimeoutSec=25min
+IgnoreSIGPIPE=no
+KillMode=none
+GuessMainPID=no
+RemainAfterExit=yes
+ExecStart=/usr/vice/etc/systemd-exec.openafs-client start
+ExecStop=/usr/vice/etc/systemd-exec.openafs-client stop
+
+[Install]
+WantedBy=multi-user.target remote-fs.target
