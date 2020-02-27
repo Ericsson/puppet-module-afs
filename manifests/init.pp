@@ -91,6 +91,15 @@
 #
 # @param init_template
 #   Name of the template file to be used for $init_script.
+#   Installs init-script if specified.
+#
+# @param systemd_script_template
+#   Name of the template file to be used as startup script for systemd.
+#   Installs systemd script if specified.
+#
+# @param systemd_unit_template
+#   Name of the template file to be used as unit file for systemd.
+#   Installs systemd unit file if specified.
 #
 # @param links
 #   Hash of path and target to create symlinks from if $create_links is true.
@@ -108,8 +117,7 @@
 #   Solaris specific: string with package source.
 #
 # @param service_provider
-#   Solaris specific (mostly): string with provider for service.
-#   Should be undef for Linux and 'init' for Solaris.
+#   String of which service provider should be used
 #
 class afs (
   Optional[String]          $afs_cellserverdb                   = undef,
@@ -134,8 +142,10 @@ class afs (
   Boolean                   $config_client_update               = false,
   Boolean                   $create_symlinks                    = false,
   Optional[Hash]            $links                              = {},
-  Stdlib::Unixpath          $init_script                        = undef,
-  String                    $init_template                      = undef,
+  Stdlib::Unixpath          $init_script                        = '/etc/init.d/openafs-client',
+  Optional[String]          $init_template                      = undef,
+  Optional[String]          $systemd_script_template            = undef,
+  Optional[String]          $systemd_unit_template              = undef,
   Optional[String]          $package_adminfile                  = undef,
   Variant[Array[String], String]
                             $package_name                       = undef,
@@ -157,6 +167,72 @@ class afs (
   # TODO: Replace with Stdlib::Fqdn
   afs::validate_domain_names { $afs_suidcells_array: }
 
+  if $init_template and $systemd_unit_template {
+    $init_script_ensure = 'file'
+    $systemd_script_ensure = 'absent'
+    $systemd_unit_ensure = 'file'
+
+    $package_before = [
+      File[afs_init_script],
+      File[afs_systemd_unit],
+      File[afs_config_cacheinfo],
+      File[afs_config_client],
+    ]
+    $service_require = [
+      File[afs_init_script],
+      File[afs_systemd_unit],
+      File[afs_config_cacheinfo],
+      File[afs_config_client],
+    ]
+    $cron_require = [
+      File[afs_init_script],
+      File[afs_systemd_script],
+    ]
+  } elsif $init_template {
+    $init_script_ensure = 'file'
+    $systemd_script_ensure = 'absent'
+    $systemd_unit_ensure = 'absent'
+
+    $package_before = [
+      File[afs_init_script],
+      File[afs_config_cacheinfo],
+      File[afs_config_client],
+    ]
+    $service_require = [
+      File[afs_init_script],
+      File[afs_config_cacheinfo],
+      File[afs_config_client],
+    ]
+    $cron_require = [
+      File[afs_init_script],
+    ]
+  } elsif $systemd_unit_template {
+    assert_type(String, $systemd_script_template) |$expected, $actual| {
+      fail("afs::systemd_script_template must be ${expected} when afs::systemd_unit_template is set but not afs::init_template. Got ${actual}.")
+    }
+    $init_script_ensure = 'absent'
+    $systemd_script_ensure = 'file'
+    $systemd_unit_ensure = 'file'
+
+    $package_before = [
+      File[afs_systemd_script],
+      File[afs_systemd_unit],
+      File[afs_config_cacheinfo],
+      File[afs_config_client],
+    ]
+    $service_require = [
+      File[afs_systemd_script],
+      File[afs_systemd_unit],
+      File[afs_config_cacheinfo],
+      File[afs_config_client],
+    ]
+    $cron_require = [
+      File[afs_systemd_script],
+    ]
+  } else {
+    fail('AFS module requires to be either init, hybrid or systemd. Please read README for more information.')
+  }
+
   if $package_adminfile != undef {
     Package {
       adminfile => $package_adminfile,
@@ -177,11 +253,7 @@ class afs (
 
   package { $package_name:
     ensure => installed,
-    before => [
-                File[afs_init_script],
-                File[afs_config_cacheinfo],
-                File[afs_config_client],
-              ],
+    before => $package_before,
   }
 
   common::mkdir_p { $afs_config_path: }
@@ -204,12 +276,30 @@ class afs (
   }
 
   file { 'afs_init_script' :
-    ensure => file,
+    ensure => $init_script_ensure,
     path   => $init_script,
     owner  => 'root',
     group  => 'root',
     mode   => '0755',
     source => "puppet:///modules/afs/${init_template}", # lint:ignore:fileserver
+  }
+
+  file { 'afs_systemd_script' :
+    ensure => $systemd_script_ensure,
+    path   => "${afs_config_path}/systemd-exec.openafs-client",
+    owner  => 'root',
+    group  => 'root',
+    mode   => '0755',
+    source => "puppet:///modules/afs/${systemd_script_template}", # lint:ignore:fileserver
+  }
+
+  file { 'afs_systemd_unit' :
+    ensure => $systemd_unit_ensure,
+    path   => '/usr/lib/systemd/system/openafs-client.service',
+    owner  => 'root',
+    group  => 'root',
+    mode   => '0755',
+    source => "puppet:///modules/afs/${systemd_unit_template}", # lint:ignore:fileserver
   }
 
   file { 'afs_config_cacheinfo' :
@@ -268,7 +358,7 @@ class afs (
     }
   }
 
-  if $service_provider != undef {
+  if $service_provider {
     Service {
       provider => $service_provider,
     }
@@ -287,11 +377,7 @@ class afs (
       hasrestart => false,
       restart    => '/bin/true',
       status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
-      require    => [
-                      File[afs_init_script],
-                      File[afs_config_cacheinfo],
-                      File[afs_config_client],
-                    ],
+      require    => $service_require,
     }
 
     if ($afs_cron_job_content != undef) and ($afs_cron_job_interval != undef) {
@@ -305,7 +391,7 @@ class afs (
           month    => $afs_cron_job_month,
           weekday  => $afs_cron_job_weekday,
           monthday => $afs_cron_job_monthday,
-          require  => File[afs_init_script],
+          require  => $cron_require,
         }
       }
       else {
@@ -316,7 +402,7 @@ class afs (
           group   => 'root',
           mode    => '0755',
           content => $afs_cron_job_content,
-          require => File[afs_init_script],
+          require => $cron_require,
         }
       }
     }
