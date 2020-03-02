@@ -66,7 +66,7 @@ afs::links:
 
 This would create the following symlinks:
 
-````
+```
 /app -> /afs/some/path/app
 /env -> /afs/some/path/env
 /etc/home -> /env/site/profiles/home
@@ -90,7 +90,7 @@ afs::afs_cron_job_minute:   '42'
 afs::package_adminfile:     '/path/to/adminfile/noask'
 afs::package_source:        '/path/to/package/openafs-x.x.x-x-Sol10'
 afs::service_provider:      'init'
-```yaml
+```
 
 On Solaris containers, this module will not start the OpenAFS service and the
 cronjob will not be created. Packages are still installed for the included tools.
@@ -112,6 +112,7 @@ hybrid:
   EL7
 systemd:
   Suse 15
+  EL 8
 ```
 
 Hybrid will use systemd to execute the init-script which will start the service.
@@ -132,6 +133,7 @@ This module aims to support the current and previous major Puppet versions.
  * EL 5
  * EL 6
  * EL 7
+ * EL 8
  * Solaris 10
  * Suse 10
  * Suse 11

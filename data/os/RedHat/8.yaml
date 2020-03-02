@@ -1,0 +1,4 @@
+---
+
+afs::systemd_unit_template: openafs-client-RedHat-systemd-exec.service
+afs::systemd_script_template: openafs-client-RedHat-systemd-exec
