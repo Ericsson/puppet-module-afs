@@ -1,0 +1,12 @@
+---
+
+afs::package_name:
+  - openafs
+  - openafs-client
+  - openafs-docs
+  - openafs-compat
+  - openafs-krb5
+  - dkms
+  - dkms-openafs
+  - glibc-devel
+  - libgcc.i386

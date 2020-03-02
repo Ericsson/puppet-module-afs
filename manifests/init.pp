@@ -1,330 +1,181 @@
-# == Class: afs
+# afs class
 #
-# Manage OpenAFS
-
+# @summary This module manages OpenAFS
+#
+# @example Declaring the class
+#   include ::afs
+#
+# @param afs_cellserverdb
+#   String defining CellServDB. Content of file $afs_config_path/CellServDB.
+#   This file will be ignored if the default value is not changed.
+#
+# @param afs_cell
+#   String defining ThisCell. Content of the file $afs_config_path/ThisCell.
+#   This file will be ignored if the default value is not changed.
+#
+# @param afs_config_path
+#   Path to the OpenAFS config directory.
+#
+# @param afs_cron_job_content
+#   String with OpenAFS cron job command. Example: '[ -x /afs_maintenance.sh ] && /afs_maintenance.sh'
+#   Do not use multi line content when $afs_cron_job_interval is set to 'specific'.
+#
+# @param afs_cron_job_hour
+#   The hour at which to run the cron job.
+#   If set to <undef> it will become '*' at creation time.
+#
+# @param afs_cron_job_interval
+#   String to specify when to run the cron job.
+#   Set to 'specific' to create cron jobs. It uses $afs_cron_job_minute/hour/weekday/month/monthday
+#   to specify when to run the cron job.
+#   On systems that support fragment files in /etc/cron.(hourly|daily|weekly|monthly) you can use
+#   This module can only create or change cron jobs, there is no housekeeping support to delete them.
+#
+# @param afs_cron_job_minute
+#   Integer within specific boundaries. The minute at which to run the cron job.
+#   ACHTUNG: If set to <undef> it will become '*' at creation time.
+#
+# @param afs_cron_job_monthday
+#   Integer within specific boundaries. The day of the month on which to run the cron job.
+#   If set to <undef> it will become '*' at creation time.
+#
+# @param afs_cron_job_month
+#   Integer within specific boundaries. The month of the year in which to run the cron job.
+#   If set to <undef> it will become '*' at creation time.
+#
+# @param afs_cron_job_weekday
+#   Integer within specific boundaries. The weekday on which to run the cron job. 0 and 7 are both for Sundays.
+#   If set to <undef> it will become '*' at creation time.
+#
+# @param afs_suidcells
+#   Array of strings with content of the file $afs_config_path/SuidCells.
+#   This file will be ignored if the default value is not changed.
+#
+# @param cache_path
+#   Path to cache storage when using disk cache.
+#   Recommended: use a dedicated partition as disk cache.
+#
+# @param cache_size
+#   Cache size in kb.
+#   '1000000' = 1GB is a good value for single user systems
+#   '4000000' = 4GB is a good value for terminal servers
+#   ACHTUNG!: real occupied space can be 5% larger, due to metadata
+#
+# @param config_client_args
+#   AFSD_ARGS / parameters to be passed to AFS daemon while starting.
+#   Since 1.6.x the afs-client has integrated auto-tuning.
+#   Specifying more options for tuning should only be applied after monitoring the system.
+#   Candidates for tuning: -stat, -volumes
+#
+# @param config_client_clean_cache_on_start
+#   Boolean trigger for the cleaning of the client cache on start.
+#   If set to true, the provided init script will clean the client cache when starting the service.
+#   Please check openafs-client config file for supported OS families.
+#
+# @param config_client_dkms
+#   Boolean to control the AFS kernel module handling via DKMS or the openafs start-script.
+#   At the moment only available on RHEL platform. It will be ignored on other platforms.
+#
+# @param config_client_path
+#   Path to the openafs-client configuration file.
+#
+# @param config_client_update
+#   Boolean trigger for the selfupdating routine in the init script.
+#   If set to true, the init skript checks for updated AFS packages in the available repositories and installs them.
+#
+# @param create_symlinks
+#   Create symlinks for convenient access to AFS structure. Path and target are taken from hash in $links.
+#
+# @param init_script
+#   Filename for the init script.
+#
+# @param init_template
+#   Name of the template file to be used for $init_script.
+#
+# @param links
+#   Hash of path and target to create symlinks from if $create_links is true.
+#
+# @param package_adminfile
+#   Solaris specific: string with adminfile.
+#
+# @param package_name
+#   Array or string of needed OpenAFS packages.
+#
+# @param package_provider
+#   Solaris specific: string with package source.
+#
+# @param package_source
+#   Solaris specific: string with package source.
+#
+# @param service_provider
+#   Solaris specific (mostly): string with provider for service.
+#   Should be undef for Linux and 'init' for Solaris.
+#
 class afs (
-  $afs_cellserverdb                   = undef,
-  $afs_cell                           = undef,
-  $afs_config_path                    = 'USE_DEFAULTS',
-  $afs_cron_job_content               = undef,
-  $afs_cron_job_hour                  = undef,
-  $afs_cron_job_interval              = undef,
-  $afs_cron_job_minute                = 42,
-  $afs_cron_job_monthday              = undef,
-  $afs_cron_job_month                 = undef,
-  $afs_cron_job_weekday               = undef,
-  $afs_suidcells                      = [],
-  $cache_path                         = 'USE_DEFAULTS',
-  $cache_size                         = '1000000',
-  $config_client_args                 = '-dynroot -afsdb -daemons 6 -volumes 1000',
-  $config_client_clean_cache_on_start = false,
-  $config_client_dkms                 = 'USE_DEFAULTS',
-  $config_client_path                 = 'USE_DEFAULTS',
-  $config_client_update               = false,
-  $create_symlinks                    = false,
-  $init_script                        = 'USE_DEFAULTS',
-  $init_template                      = 'USE_DEFAULTS',
-  $links                              = undef,
-  $package_adminfile                  = undef,
-  $package_name                       = 'USE_DEFAULTS',
-  $package_provider                   = undef,
-  $package_source                     = undef,
-  $service_provider                   = undef,
+  Optional[String]          $afs_cellserverdb                   = undef,
+  Optional[String]          $afs_cell                           = undef,
+  Stdlib::Unixpath          $afs_config_path                    = undef,
+  Optional[String]          $afs_cron_job_content               = undef,
+  Optional[Enum['hourly', 'daily', 'weekly', 'monthly', 'specific']]
+                            $afs_cron_job_interval              = undef,
+  Optional[Integer[0, 59]]  $afs_cron_job_minute                = 42,
+  Optional[Integer[0, 23]]  $afs_cron_job_hour                  = undef,
+  Optional[Integer[1, 31]]  $afs_cron_job_monthday              = undef,
+  Optional[Integer[1, 12]]  $afs_cron_job_month                 = undef,
+  Optional[Integer[0, 7]]   $afs_cron_job_weekday               = undef,
+  Variant[Array[String], String]
+                            $afs_suidcells                      = [],
+  Stdlib::Unixpath          $cache_path                         = undef,
+  Integer                   $cache_size                         = 1000000,
+  String                    $config_client_args                 = '-dynroot -afsdb -daemons 6 -volumes 1000',
+  Boolean                   $config_client_clean_cache_on_start = false,
+  Boolean                   $config_client_dkms                 = undef,
+  Stdlib::Unixpath          $config_client_path                 = undef,
+  Boolean                   $config_client_update               = false,
+  Boolean                   $create_symlinks                    = false,
+  Optional[Hash]            $links                              = {},
+  Stdlib::Unixpath          $init_script                        = undef,
+  String                    $init_template                      = undef,
+  Optional[String]          $package_adminfile                  = undef,
+  Variant[Array[String], String]
+                            $package_name                       = undef,
+  Optional[String]          $package_provider                   = undef,
+  Optional[String]          $package_source                     = undef,
+  Optional[String]          $service_provider                   = undef,
 ) {
 
-  # <define os default values>
-  # Set $os_defaults_missing to true for unspecified osfamilies
-  case $::osfamily {
-    'RedHat': {
-      $os_defaults_missing        = false
-      $afs_config_path_default    = '/usr/vice/etc'
-      $cache_path_default         = '/usr/vice/cache'
-      $config_client_dkms_default = true
-      $config_client_path_default = '/etc/sysconfig/openafs-client'
-      $init_script_default        = '/etc/init.d/openafs-client'
-      $init_template_default      = 'openafs-client-RedHat'
-      if $::operatingsystemmajrelease != '5' {
-        $package_name_default       = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686' ]
-      } else {
-        $package_name_default       = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i386' ]
-      }
-    }
-    'Suse': {
-      $os_defaults_missing        = false
-      $afs_config_path_default    = '/etc/openafs'
-      $cache_path_default         = '/var/cache/openafs'
-      $config_client_dkms_default = false
-      $config_client_path_default = '/etc/sysconfig/openafs-client'
-      $init_script_default        = '/etc/init.d/openafs-client'
-      $init_template_default      = 'openafs-client-Suse'
-      $package_name_default       = [ 'openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit' ]
-    }
-    'Solaris': {
-      $os_defaults_missing        = false
-      $afs_config_path_default    = '/usr/vice/etc'
-      $cache_path_default         = '/usr/vice/cache'
-      $config_client_dkms_default = false
-      $config_client_path_default = '/usr/vice/etc/sysconfig/openafs-client'
-      $init_script_default        = '/etc/init.d/openafs-client'
-      $init_template_default      = 'openafs-client-Solaris'
-      $package_name_default       = [ 'EISopenafs' ]
-    }
-    'Debian': {
-      $os_defaults_missing        = false
-      $afs_config_path_default    = '/etc/openafs'
-      $cache_path_default         = '/var/cache/openafs'
-      $config_client_dkms_default = true
-      $config_client_path_default = '/etc/default/openafs-client'
-      $init_script_default        = '/etc/init.d/openafs-client'
-      $init_template_default      = 'openafs-client-Ubuntu'
-      $package_name_default       = [ 'openafs-modules-dkms', 'openafs-modules-source', 'openafs-client', 'openafs-doc', 'openafs-krb5', 'dkms' ]
-    }
-    default: {
-      $os_defaults_missing = true
-    }
-  }
-  # </define os default values>
+  $afs_suidcells_array = any2array($afs_suidcells)
+  $config_client_dir = dirname($config_client_path)
 
-
-  # <USE_DEFAULT vs OS defaults>
-  # Check if 'USE_DEFAULTS' is used anywhere without having OS default value
-  if (
-    ($afs_config_path == 'USE_DEFAULTS') or
-    ($cache_path == 'USE_DEFAULTS') or
-    ($config_client_dkms == 'USE_DEFAULTS') or
-    ($config_client_path == 'USE_DEFAULTS') or
-    ($init_script == 'USE_DEFAULTS') or
-    ($init_template == 'USE_DEFAULTS') or
-    ($package_name == 'USE_DEFAULTS')
-  ) and $os_defaults_missing == true {
-      fail("Sorry, I don't know default values for ${::osfamily} yet :( Please provide specific values to the afs module.")
-  }
-  # </USE_DEFAULT vs OS defaults>
-
-
-  # <assign variables>
-  # Change 'USE_DEFAULTS' to OS specific default values
-  # Convert strings with booleans to real boolean, if needed
-  # Create *_real variables for the rest too
-
-  $afs_cellserverdb_real = $afs_cellserverdb
-
-  $afs_cell_real = $afs_cell
-
-  $afs_config_path_real = $afs_config_path ? {
-    'USE_DEFAULTS' => $afs_config_path_default,
-    default        => $afs_config_path
-  }
-
-  $afs_cron_job_content_real = $afs_cron_job_content
-
-  $afs_cron_job_hour_real = $afs_cron_job_hour
-
-  $afs_cron_job_interval_real = $afs_cron_job_interval
-
-  $afs_cron_job_minute_real = $afs_cron_job_minute
-
-  $afs_cron_job_monthday_real = $afs_cron_job_monthday
-
-  $afs_cron_job_month_real = $afs_cron_job_month
-
-  $afs_cron_job_weekday_real = $afs_cron_job_weekday
-
-  case type3x($afs_suidcells) {
-    'array':  { $afs_suidcells_array = $afs_suidcells }
-    'string': { $afs_suidcells_array = any2array($afs_suidcells) }
-    default:  { fail('afs::afs_suidcells is not an array nor a string.') }
-  }
-
-  $cache_path_real = $cache_path ? {
-    'USE_DEFAULTS' => $cache_path_default,
-    default        => $cache_path
-  }
-
-  $cache_size_real = $cache_size
-
-  $config_client_args_real = $config_client_args
-
-  $config_client_clean_cache_on_start_bool = str2bool($config_client_clean_cache_on_start)
-
-  if is_bool($config_client_dkms) == true {
-    $config_client_dkms_real = $config_client_dkms
-  } else {
-    $config_client_dkms_real = $config_client_dkms ? {
-      'USE_DEFAULTS' => $config_client_dkms_default,
-      default        => str2bool($config_client_dkms)
-    }
-  }
-
-  $config_client_path_real = $config_client_path ? {
-    'USE_DEFAULTS' => $config_client_path_default,
-    default        => $config_client_path
-  }
-
-  if is_bool($config_client_update) == true {
-    $config_client_update_real = $config_client_update
-  } else {
-    $config_client_update_real = str2bool($config_client_update)
-  }
-
-  if is_bool($create_symlinks) == true {
-    $create_symlinks_real = $create_symlinks
-  } else {
-    $create_symlinks_real = str2bool($create_symlinks)
-  }
-
-  $init_script_real = $init_script ? {
-    'USE_DEFAULTS' => $init_script_default,
-    default        => $init_script
-  }
-
-  $init_template_real = $init_template ? {
-    'USE_DEFAULTS' => $init_template_default,
-    default        => $init_template
-  }
-
-  $package_adminfile_real = $package_adminfile
-
-  $package_name_real = $package_name ? {
-    'USE_DEFAULTS' => $package_name_default,
-    default        => $package_name
-  }
-
-  $package_source_real = $package_source
-
-  $package_provider_real = $package_provider
-
-  $service_provider_real = $service_provider
-
-  if is_bool($::is_virtual) == true {
-    $is_virtual_bool = $::is_virtual
-  } else {
-    $is_virtual_bool = str2bool($::is_virtual)
-  }
-
-  if ($::osfamily == 'Solaris') and ($is_virtual_bool == true) and ($::virtual == 'zone') {
-    $solaris_container_real = true
+  if $facts['os']['family'] == 'Solaris' and $facts['is_virtual'] == true and $facts['virtual'] == 'zone' {
+    $solaris_container = true
   }
   else {
-    $solaris_container_real = false
+    $solaris_container = false
   }
 
-  # </assign variables>
-
-
-  # <validating variables>
-  if $afs_cellserverdb_real != undef {
-    validate_string($afs_cellserverdb_real)
-  }
-
-  if ($afs_cell_real != undef) and (is_domain_name($afs_cell_real) != true) {
-    fail('Only domain names are allowed in the afs::afs_cell param.')
-  }
-
-  validate_absolute_path($afs_config_path_real)
-
-  if $afs_cron_job_content_real != undef {
-    validate_string($afs_cron_job_content_real)
-  }
-
-  if ($afs_cron_job_hour_real != undef) and (is_numeric($afs_cron_job_hour_real) != true) {
-    fail('Only numbers are allowed in the afs::afs_cron_job_hour param.')
-  }
-
-  if $afs_cron_job_interval_real != undef {
-    validate_re($afs_cron_job_interval_real, '^(hourly)|(daily)|(weekly)|(monthly)|(specific)$', 'Only <hourly>, <daily>, <weekly>, <monthly> and <specific> are allowed in the afs::afs_cron_job_interval param.')
-  }
-
-  if ($afs_cron_job_minute_real != undef) and (is_numeric($afs_cron_job_minute_real) != true) {
-    fail('Only numbers are allowed in the afs::afs_cron_job_minute param.')
-  }
-
-  if ($afs_cron_job_monthday_real != undef) and (is_numeric($afs_cron_job_monthday_real) != true) {
-    fail('Only numbers are allowed in the afs::afs_cron_job_monthday param.')
-  }
-
-  if ($afs_cron_job_month_real != undef) and (is_numeric($afs_cron_job_month_real) != true) {
-    fail('Only numbers are allowed in the afs::afs_cron_job_month param.')
-  }
-
-  if ($afs_cron_job_weekday_real != undef) and (is_numeric($afs_cron_job_weekday_real) != true) {
-    fail('Only numbers are allowed in the afs::afs_cron_job_weekday param.')
-  }
-
-  # stdlib/validate_domain_name() does not support arrays :(
-  # iterate through array of domain_names to validate them in Puppet 3 style
+  # TODO: Replace with Stdlib::Fqdn
   afs::validate_domain_names { $afs_suidcells_array: }
 
-  validate_absolute_path($cache_path_real)
-
-  if !is_integer($cache_size_real) {
-    fail('Only integers are allowed in the afs::cache_size param.')
-  }
-
-  validate_string($config_client_args_real)
-
-  validate_bool($config_client_clean_cache_on_start_bool)
-
-  validate_bool($config_client_dkms_real)
-
-  validate_absolute_path($config_client_path_real)
-
-  validate_bool($config_client_update_real)
-
-  validate_bool($create_symlinks_real)
-
-  validate_absolute_path($init_script_real)
-
-  validate_string($init_template_real)
-
-  validate_string($package_adminfile_real)
-
-  validate_array($package_name_real)
-
-  if $package_source_real != undef {
-    validate_string($package_source_real)
-  }
-
-  if $package_provider_real != undef {
-    validate_string($package_provider_real)
-  }
-
-  if $service_provider_real != undef {
-    validate_string($service_provider_real)
-  }
-
-  if $solaris_container_real != undef {
-    validate_bool($solaris_container_real)
-  }
-
-  # </validating variables>
-
-
-  # <Install & Config>
-
-  $config_client_clean_cache_on_start_string = bool2str($config_client_clean_cache_on_start_bool)
-
-  if $package_adminfile_real != undef {
+  if $package_adminfile != undef {
     Package {
-      adminfile => $package_adminfile_real,
+      adminfile => $package_adminfile,
     }
   }
 
-  if $package_provider_real != undef {
+  if $package_provider != undef {
     Package {
-      provider => $package_provider_real,
+      provider => $package_provider,
     }
   }
 
-  if $package_source_real != undef {
+  if $package_source != undef {
     Package {
-      source => $package_source_real,
+      source => $package_source,
     }
   }
 
-  $config_client_dir_real = dirname($config_client_path_real)
-
-  package { $package_name_real:
+  package { $package_name:
     ensure => installed,
     before => [
                 File[afs_init_script],
@@ -333,17 +184,16 @@ class afs (
               ],
   }
 
-  common::mkdir_p { $afs_config_path_real: }
-  common::mkdir_p { $config_client_dir_real: }
+  common::mkdir_p { $afs_config_path: }
+  common::mkdir_p { $config_client_dir: }
 
-  if $solaris_container_real == false {
-    # add dependency to this service for all file resources
+  if $solaris_container == false {
     File {
       before => Service[afs_openafs_client_service],
     }
   }
 
-  if ($::osfamily == 'Suse' and $::operatingsystemrelease =~ /12|15/) {
+  if ($facts['os']['family'] == 'Suse' and $facts['os']['release']['major'] =~ /12|15/) {
     file_line { 'allow_unsupported_modules':
       ensure => 'present',
       path   => '/etc/modprobe.d/10-unsupported-modules.conf',
@@ -355,77 +205,77 @@ class afs (
 
   file { 'afs_init_script' :
     ensure => file,
-    path   => $init_script_real,
+    path   => $init_script,
     owner  => 'root',
     group  => 'root',
     mode   => '0755',
-    source => "puppet:///modules/afs/${init_template_real}", # lint:ignore:fileserver
+    source => "puppet:///modules/afs/${init_template}", # lint:ignore:fileserver
   }
 
   file { 'afs_config_cacheinfo' :
     ensure  => file,
-    path    => "${afs_config_path_real}/cacheinfo",
+    path    => "${afs_config_path}/cacheinfo",
     owner   => 'root',
     group   => 'root',
     mode    => '0644',
     content => template('afs/cacheinfo.erb'),
-    require => Common::Mkdir_p[$afs_config_path_real],
+    require => Common::Mkdir_p[$afs_config_path],
   }
 
   file { 'afs_config_client' :
     ensure  => file,
-    path    => $config_client_path_real,
+    path    => $config_client_path,
     owner   => 'root',
     group   => 'root',
     mode    => '0644',
     content => template('afs/openafs-client.erb'),
-    require => Common::Mkdir_p[$config_client_dir_real],
+    require => Common::Mkdir_p[$config_client_dir],
   }
 
   if empty($afs_suidcells_array) == false {
     file { 'afs_config_suidcells' :
       ensure  => file,
-      path    => "${afs_config_path_real}/SuidCells",
+      path    => "${afs_config_path}/SuidCells",
       owner   => 'root',
       group   => 'root',
       mode    => '0644',
       content => template('afs/suidcells.erb'),
-      require => Common::Mkdir_p[$afs_config_path_real],
+      require => Common::Mkdir_p[$afs_config_path],
     }
   }
 
-  if $afs_cell_real != undef {
+  if $afs_cell != undef {
     file { 'afs_config_thiscell' :
       ensure  => file,
-      path    => "${afs_config_path_real}/ThisCell",
+      path    => "${afs_config_path}/ThisCell",
       owner   => 'root',
       group   => 'root',
       mode    => '0644',
-      content => "${afs_cell_real}\n",
-      require => Common::Mkdir_p[$afs_config_path_real],
+      content => "${afs_cell}\n",
+      require => Common::Mkdir_p[$afs_config_path],
     }
   }
 
-  if $afs_cellserverdb_real != undef {
+  if $afs_cellserverdb != undef {
     file { 'afs_config_cellserverdb' :
       ensure  => file,
-      path    => "${afs_config_path_real}/CellServDB",
+      path    => "${afs_config_path}/CellServDB",
       owner   => 'root',
       group   => 'root',
       mode    => '0644',
-      content => "${afs_cellserverdb_real}\n",
-      require => Common::Mkdir_p[$afs_config_path_real],
+      content => "${afs_cellserverdb}\n",
+      require => Common::Mkdir_p[$afs_config_path],
     }
   }
 
-  if $service_provider_real != undef {
+  if $service_provider != undef {
     Service {
-      provider => $service_provider_real,
+      provider => $service_provider,
     }
   }
 
   # Solaris containers must not start the service nor add setserverprefs cronjob.
-  if $solaris_container_real == false {
+  if $solaris_container == false {
 
     # THIS SERVICE SHOULD NOT BE RESTARTED
     # Restarting it may cause AFS module and kernel problems.
@@ -444,38 +294,35 @@ class afs (
                     ],
     }
 
-    if ($afs_cron_job_content_real != undef) and ($afs_cron_job_interval_real != undef) {
-      if $afs_cron_job_interval_real == 'specific' {
+    if ($afs_cron_job_content != undef) and ($afs_cron_job_interval != undef) {
+      if $afs_cron_job_interval == 'specific' {
         cron { 'afs_cron_job':
           ensure   => present,
-          command  => $afs_cron_job_content_real,
+          command  => $afs_cron_job_content,
           user     => 'root',
-          minute   => $afs_cron_job_minute_real,
-          hour     => $afs_cron_job_hour_real,
-          month    => $afs_cron_job_month_real,
-          weekday  => $afs_cron_job_weekday_real,
-          monthday => $afs_cron_job_monthday_real,
+          minute   => $afs_cron_job_minute,
+          hour     => $afs_cron_job_hour,
+          month    => $afs_cron_job_month,
+          weekday  => $afs_cron_job_weekday,
+          monthday => $afs_cron_job_monthday,
           require  => File[afs_init_script],
         }
       }
       else {
         file { 'afs_cron_job' :
           ensure  => file,
-          path    => "/etc/cron.${afs_cron_job_interval_real}/afs_cron_job",
+          path    => "/etc/cron.${afs_cron_job_interval}/afs_cron_job",
           owner   => 'root',
           group   => 'root',
           mode    => '0755',
-          content => $afs_cron_job_content_real,
+          content => $afs_cron_job_content,
           require => File[afs_init_script],
         }
       }
     }
   }
-  # <Install & Config>
 
-
-  # <create symlinks>
-  if $create_symlinks_real == true {
+  if $create_symlinks == true {
 
     $afs_create_link_defaults = {
       'ensure' => 'link',
@@ -487,6 +334,5 @@ class afs (
     create_resources(file, $links, $afs_create_link_defaults)
 
   }
-  # </create symlinks>
 
 }

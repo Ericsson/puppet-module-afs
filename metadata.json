@@ -7,46 +7,94 @@
   "source": "git@github.com:kodguru/puppet-module-afs.git",
   "project_page": "https://github.com/kodguru/puppet-module-afs",
   "issues_url": "https://github.com/kodguru/puppet-module-afs/issues",
+  "dependencies": [
+    {
+      "name": "ghoneycutt/common",
+      "version_requirement": ">= 1.9.0 < 2.0.0"
+    },
+    {
+      "name": "puppetlabs/cron_core",
+      "version_requirement": ">= 1.0.0 < 2.0.0"
+    },
+    {
+      "name": "puppetlabs/stdlib",
+      "version_requirement": ">= 5.2.0 < 7.0.0"
+    }
+  ],
   "operatingsystem_support": [
     {
       "operatingsystem": "RedHat",
-      "operatingsystemrelease": ["5","6","7"]
+      "operatingsystemrelease": [
+        "5",
+        "6",
+        "7"
+      ]
     },
     {
       "operatingsystem": "CentOS",
-      "operatingsystemrelease": ["5","6","7"]
+      "operatingsystemrelease": [
+        "5",
+        "6",
+        "7"
+      ]
     },
     {
       "operatingsystem": "OracleLinux",
-      "operatingsystemrelease": ["5","6","7"]
+      "operatingsystemrelease": [
+        "5",
+        "6",
+        "7"
+      ]
     },
     {
       "operatingsystem": "Scientific",
-      "operatingsystemrelease": ["5","6","7"]
+      "operatingsystemrelease": [
+        "5",
+        "6",
+        "7"
+      ]
     },
     {
       "operatingsystem": "Solaris",
-      "operatingsystemrelease": ["10"]
+      "operatingsystemrelease": [
+        "10"
+      ]
     },
     {
       "operatingsystem": "SLES",
-      "operatingsystemrelease": ["10","11","12","15"]
+      "operatingsystemrelease": [
+        "10",
+        "11",
+        "12",
+        "15"
+      ]
     },
     {
       "operatingsystem": "SLED",
-      "operatingsystemrelease": ["10","11","12"]
+      "operatingsystemrelease": [
+        "10",
+        "11",
+        "12",
+        "15"
+      ]
     },
     {
       "operatingsystem": "Ubuntu",
-      "operatingsystemrelease": ["12.04","14.04"]
+      "operatingsystemrelease": [
+        "12.04",
+        "14.04",
+        "16.04",
+        "18.04"
+      ]
     }
   ],
   "requirements": [
-    {"name": "puppet","version_requirement": ">= 3.0.0 < 7.0.0"}
+    {
+      "name": "puppet",
+      "version_requirement": ">= 5.0.0 < 7.0.0"
+    }
   ],
-  "dependencies": [
-    {"name":"ghoneycutt/common","version_requirement":">= 1.3.0 < 2.0.0"},
-    {"name":"puppetlabs/cron_core","version_requirement":">= 1.0.0 < 2.0.0"},
-    {"name":"puppetlabs/stdlib","version_requirement":">= 4.6.0 < 5.0.0"}
-  ]
+  "pdk-version": "1.15.0",
+  "template-url": "pdk-default#1.15.0",
+  "template-ref": "tags/1.15.0-0-g0bc522e"
 }

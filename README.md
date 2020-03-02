@@ -1,261 +1,57 @@
-# puppet-module-afs #
-===
-
-Puppet Module to manage OpenAFS
-
-The module installs and configures OpenAFS.
-
-# Compatability #
-
-This module has been tested to work on the following systems with Puppet v3
-(with and without the future parser) and ruby versions 1.9.3, 2.0.0 and 2.1.9,
-Puppet v4, Puppet v5 and Puppet v6.
-
-This module provides OS default values for these OSfamilies:
-
- * RedHat 5/6/7
- * Solaris 10
- * Suse 10/11/12/15
- * Ubuntu 12.04/14.04/16.04/18.04
-
-For other OSfamilies support, please specify all parameters which defaults to 'USE_DEFAULTS'.
-
-
-# Version history #
-* 1.7.0 2020-01-09 Add support for Suse 15 and init-script improvements
-* 1.6.1 2019-06-19 Startup script and dkms improvements
-* 1.6.0 2018-11-05 Add support for mulitple suidcells
-* 1.5.2 2018-10-24 Support Puppet 6
-* 1.5.1 2018-10-08 Startup script improvments & remove -nosettime
-* 1.5.0 2018-09-26 Support Puppet 5
-* 1.4.1 2017-06-28 Add docs
-* 1.4.0 2017-06-27
-  * Add functionality to clear client caches on start
-  * Updates RedHat init script to v1.16
-  * Updates Suse init script to v1.16
-* 1.3.1 2017-02-21 Fix fact using wrong redirection
-* 1.3.0 2017-02-20 Support Puppet up to 4.9 and Ruby 2.3.1
-* 1.2.6 2016-06-07
-  * Updates Solaris init script to v1.10
-  * Fixes issues with STRICT_VARIABLES on Puppet 4.5
-* 1.2.5 2016-03-18 Update init scripts
-  * Enhance dependency handling
-  * Updates RedHat init script to v1.1.5
-  * Updates Suse init script to v1.1.5
-  * Updates Solaris init script to v1.9
-  * Updates Ubuntu init script to v1.4
-* 1.2.4 2015-10-30 Updates Suse init script to v1.12
-* 1.2.3 2015-08-14 Update init scripts
-  * Add libgcc (32bit) to RedHat package list for dependency reasons
-  * Updates Suse init script to v1.11
-  * Updates RedHat init script to v1.12
-* 1.2.2 2015-07-30
-  * Add glibc-devel to RedHat package list for dependency reasons
-  * Support for Puppet v4, refactor dependencies
-* 1.2.1 2015-03-31 Updates Suse init script to v1.9
-* 1.2.0 2015-03-30 Add support for SLES 12
-* 1.1.2 2015-03-20 Re-enable custom fact (afs_version) for RPMs
-* 1.1.1 2015-03-20 Add Ubuntu support to the custom fact (afs_version)
-* 1.1.0 2015-02-23 Update init scripts
-  * Add Ubuntu support for 12.04/14.04
-  * Updates RedHat init script to 1.10
-  * Updates Suse init script to v1.8
-  * Updates Solairs init script to v1.8
-  * Updates Ubuntu init script to v1.2
-* 1.0.3 2015-02-13 Deprecate type() as preparation for Puppet v4. Needs stdlib >= 4.2 now
-* 1.0.2 2014-12-12 Update init scripts
-  * Updates RedHat init script to v1.7
-  * Updates Suse init script to v1.5
-  * Updates Solairs init script to v1.5
-* 1.0.1 2014-11-20 Update init scripts
-  * Updates RedHat init script to v1.6
-  * Updates Suse init script to v1.4
-  * Small spec test fix
-* 1.0.0 2014-11-13 Initial release
+# puppet-module-fs
 
-# Parameters #
+#### Table of Contents
 
-afs_cellserverdb
-----------------
-String with content of the file $afs_config_path/CellServDB.
-This file will be ignored if the default value is not changed.
+1. [Module Description - What the module does and why it is useful](#module-description)
+1. [Setup - The basics of getting started with afs](#setup)
+   * [What afs affects](#what-afs-affects)
+   * [Setup requirements](#setup-requirements)
+   * [Beginning with afs](#beginning-with-afs)
+1. [Usage - Configuration options and additional functionality](#usage)
+1. [Limitations - OS compatibility, etc.](#limitations)
+1. [Development - Guide for contributing to the module](#development)
 
-- *Default*: undef
+## Module description
 
+This module manages OpenAFS
 
-afs_cell
---------
-String with content of the file $afs_config_path/ThisCell.
-This file will be ignored if the default value is not changed.
+## Setup
 
-- *Default*: undef
+### What afs affects
 
+Manages the packages and files regarding OpenAFS. Location of these files vary
+by platform and packages being used to install OpenAFS.
 
-afs_config_path
----------------
-Path to the OpenAFS config directory.
+### Setup requirements
 
-- *Default*: 'USE_DEFAULTS', based on OS platform
+This module requires `stdlib`,`cron_core` and `common` (see metadata.json).
 
+### Beginning with afs
 
-afs_cron_job_content
---------------------
-String with OpenAFS cron job command. Example: '[ -x /afs_maintenance.sh ] && /afs_maintenance.sh'
-Do not use multi line content when $afs_cron_job_interval is set to 'specific'.
+Include the main `::afs` class. Default values for supported operating systems
+are specified in the module's Hiera.
 
-- *Default*: undef
+#### Basic usage
 
+There are a few parameters that are required for the AFS module to configure
+OpenAFS correctly.
+afs::cell
+afs::afs_cellserverdb
 
-afs_cron_job_hour
------------------
-Integer between 0 and 23. The hour at which to run the cron job.
-If set to <undef> it will become '*' at creation time.
+```yaml
+afs::cell: afs.domain.tld
+afs::afs_cellserverdb: |
+  >afs.domain.tld
+```
 
-- *Default*: undef
+OpenAFS will be configured with ThisCell `afs.domain.tld` with CellServDB
+`afs.domain.tld`.
 
+#### Manage symlinks for AFS
 
-afs_cron_job_interval
----------------------
-String to specify when to run the cron job.
+Symlinks can be created if required.
 
-Set to 'specific' to create cron jobs. It uses $afs_cron_job_minute/hour/weekday/month/monthday
-to specify when to run the cron job.
-
-On systems that support fragment files in /etc/cron.(hourly|daily|weekly|monthly) you can use
-'hourly' ,'daily', 'weekly' and 'monthly' to create a file in the according directory.
-
-This module can only create or change cron jobs, there is no housekeeping support to delete them.
-
-
-afs_cron_job_minute
--------------------
-Integer between 0 and 59. The minute at which to run the cron job.
-ACHTUNG: If set to <undef> it will become '*' at creation time.
-Default to 42 for sanity reasons.
-
-- *Default*: 42
-
-
-afs_cron_job_monthday
----------------------
-Integer between 1 and 31. The day of the month on which to run the cron job.
-If set to <undef> it will become '*' at creation time.
-
-- *Default*: undef
-
-
-afs_cron_job_month
-------------------
-Integer between 1 and 12. The month of the year in which to run the cron job.
-If set to <undef> it will become '*' at creation time.
-
-- *Default*: undef
-
-
-afs_cron_job_weekday
---------------------
-Integer between 0 and 7. The weekday on which to run the cron job. 0 and 7 are both for Sundays.
-If set to <undef> it will become '*' at creation time.
-
-- *Default*: undef
-
-
-afs_suidcells
--------------
-Array of strings with content of the file $afs_config_path/SuidCells.
-This file will be ignored if the default value is not changed.
-
-- *Default*: []
-
-
-cache_path
-----------
-Path to cache storage when using disk cache.
-Recommended: use a dedicated partition as disk cache.
-
-- *Default*: 'USE_DEFAULTS', based on OS platform
-
-
-cache_size
-----------
-Cache size in kb.
-'1000000' = 1GB is a good value for single user systems
-'4000000' = 4GB is a good value for terminal servers
-ACHTUNG!: real occupied space can be 5% larger, due to metadata
-
-- *Default*: '1000000'
-
-
-config_client_args
-------------------
-AFSD_ARGS / parameters to be passed to AFS daemon while starting.
-Since 1.6.x the afs-client has integrated auto-tuning. So specifying more options for tuning should only be applied after monitoring the system.
-Candidates for tuning: -stat, -volumes
-
-- *Default*: '-dynroot -afsdb -daemons 6 -volumes 1000 -nosettime'
-
-
-config_client_clean_cache_on_start
-----------------------------------
-Boolean trigger for the cleaning of the client cache on start.
-If set to true, the provided init script will clean the client cache when starting the service.
-Please check openafs-client config file for supported OS families.
-
-- *Default*: false
-
-
-config_client_dkms
-------------------
-Boolean to control the AFS kernel module handling via DKMS or the openafs start-script.
-At the moment only available on RHEL platform. It will be ignored on other platforms.
-
-- *Default*: 'USE_DEFAULTS', based on OS platform
-
-
-config_client_path
-------------------
-Path to the openafs-client configuration file.
-
-- *Default*: 'USE_DEFAULTS', based on OS platform
-
-
-config_client_update
---------------------
-Boolean trigger for the selfupdating routine in the init script.
-If set to true, the init skript checks for updated AFS packages in the available repositories and installs them.
-
-- *Default*: false
-
-
-create_symlinks
----------------
-Create symlinks for convenient access to AFS structure. Path and target are taken from hash in $links.
-
-- *Default*: false
-
-
-init_script
------------
-Filename for the init script.
-
-- *Default*: 'USE_DEFAULTS', based on OS platform
-
-
-init_template
--------------
-Name of the template file to be used for $init_script.
-
-- *Default*: 'USE_DEFAULTS', based on OS platform
-
-
-links
------
-Hash of path and target to create symlinks from if $create_links is true.
-
-- *Default*: undef
-
-Hiera example:
-<pre>
+```yaml
 afs::links:
   'app':
     path:   '/app'
@@ -266,54 +62,26 @@ afs::links:
   'etc_home':
      path:   '/etc/home'
      target: '/env/site/profiles/home'
-</pre>
+```
 
+This would create the following symlinks:
 
-package_adminfile
------------------
-Solaris specific: string with adminfile.
+````
+/app -> /afs/some/path/app
+/env -> /afs/some/path/env
+/etc/home -> /env/site/profiles/home
+```
 
-- *Default*: undef
+#### Solaris specific
 
-
-package_name
-------------
-Array of needed OpenAFS packages.
-
-- *Default*: 'USE_DEFAULTS', based on OS platform
-
-
-package_provider
-----------------
-Solaris specific: string with package source.
-
-- *Default*: undef
-
-
-package_source
---------------
-Solaris specific: string with package source.
-
-- *Default*: undef
-
-
-service_provider
-----------------
-Solaris specific (mostly): string with provider for service.
-Should be undef for Linux and 'init' for Solaris.
-
-- *Default*: undef
-
-
-# Solaris specific #
 For usage on Solaris, you will need to define these variables:
 
 $package_adminfile, $package_source and $service_provider
 
-If you want to create a cron job, please set $afs_cron_job_interval to 'specific' and choose your values for $afs_cron_job_hour and $afs_cron_job_minute.
+If you want to create a cron job, please set $afs_cron_job_interval to
+'specific' and choose your values for $afs_cron_job_hour and $afs_cron_job_minute.
 
-Hiera example:
-<pre>
+```yaml
 afs::afs_cron_job_interval: 'specific'
 afs::afs_cron_job_content:  '[ -x /afs_maintenance.sh ] && /afs_maintenance.sh'
 afs::afs_cron_job_hour:     '2'
@@ -322,6 +90,30 @@ afs::afs_cron_job_minute:   '42'
 afs::package_adminfile:     '/path/to/adminfile/noask'
 afs::package_source:        '/path/to/package/openafs-x.x.x-x-Sol10'
 afs::service_provider:      'init'
-</pre>
+```yaml
 
-On Solaris containers, this module will not start the OpenAFS service and the cronjob will not be created. Packages are still installed for the included tools.
+On Solaris containers, this module will not start the OpenAFS service and the
+cronjob will not be created. Packages are still installed for the included tools.
+
+## Limitations
+
+This module has been tested to work on the following systems with Puppet
+versions 5 and 6 with the Ruby version associated with those releases.
+Please see `.travis.yml` for a full matrix of supported versions.
+This module aims to support the current and previous major Puppet versions.
+
+ * EL 5
+ * EL 6
+ * EL 7
+ * Solaris 10
+ * Suse 10
+ * Suse 11
+ * Suse 12
+ * Suse 15
+ * Ubuntu 12.04
+ * Ubuntu 14.04
+ * Ubuntu 16.04
+ * Ubuntu 18.04
+
+Other operating systems might be supported by configuring the module with the
+correct parameters.
