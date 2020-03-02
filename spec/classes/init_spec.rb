@@ -12,14 +12,61 @@ describe 'afs' do
 
         it { is_expected.to compile.with_all_deps }
 
+        if !v[:init_template].nil? && !v[:systemd_unit_template].nil?
+          init_script_ensure = 'file'
+          systemd_script_ensure = 'absent'
+          systemd_unit_ensure = 'file'
+
+          package_before = [
+            'File[afs_init_script]',
+            'File[afs_systemd_unit]',
+            'File[afs_config_cacheinfo]',
+            'File[afs_config_client]',
+          ]
+          service_require = [
+            'File[afs_init_script]',
+            'File[afs_systemd_unit]',
+            'File[afs_config_cacheinfo]',
+            'File[afs_config_client]',
+          ]
+        elsif !v[:init_template].nil?
+          init_script_ensure = 'file'
+          systemd_script_ensure = 'absent'
+          systemd_unit_ensure = 'absent'
+
+          package_before = [
+            'File[afs_init_script]',
+            'File[afs_config_cacheinfo]',
+            'File[afs_config_client]',
+          ]
+          service_require = [
+            'File[afs_init_script]',
+            'File[afs_config_cacheinfo]',
+            'File[afs_config_client]',
+          ]
+        elsif !v[:systemd_unit_template].nil?
+          init_script_ensure = 'absent'
+          systemd_script_ensure = 'file'
+          systemd_unit_ensure = 'file'
+
+          package_before = [
+            'File[afs_systemd_script]',
+            'File[afs_systemd_unit]',
+            'File[afs_config_cacheinfo]',
+            'File[afs_config_client]',
+          ]
+          service_require = [
+            'File[afs_systemd_script]',
+            'File[afs_systemd_unit]',
+            'File[afs_config_cacheinfo]',
+            'File[afs_config_client]',
+          ]
+        end
+
         v[:package_name].each do |package|
           it {
             is_expected.to contain_package(package).with('ensure' => 'installed',
-                                                         'before' => [
-                                                           'File[afs_init_script]',
-                                                           'File[afs_config_cacheinfo]',
-                                                           'File[afs_config_client]',
-                                                         ])
+                                                         'before' => package_before)
           }
         end
 
@@ -31,13 +78,33 @@ describe 'afs' do
 
         # file { 'afs_init_script' :}
         it {
-          is_expected.to contain_file('afs_init_script').with('ensure' => 'file',
+          is_expected.to contain_file('afs_init_script').with('ensure'  => init_script_ensure,
                                                               'path'    => v[:init_script],
                                                               'owner'   => 'root',
                                                               'group'   => 'root',
                                                               'mode'    => '0755',
                                                               'source'  => "puppet:///modules/afs/#{v[:init_template]}",
                                                               'before'  => 'Service[afs_openafs_client_service]')
+        }
+
+        # file { 'afs_systemd_unit': }
+        it {
+          is_expected.to contain_file('afs_systemd_script').with('ensure'  => systemd_script_ensure,
+                                                                 'path'    => "#{v[:afs_config_path]}/systemd-exec.openafs-client",
+                                                                 'owner'   => 'root',
+                                                                 'group'   => 'root',
+                                                                 'mode'    => '0755',
+                                                                 'source'  => "puppet:///modules/afs/#{v[:systemd_script_template]}",
+                                                                 'before'  => 'Service[afs_openafs_client_service]')
+        }
+        it {
+          is_expected.to contain_file('afs_systemd_unit').with('ensure'  => systemd_unit_ensure,
+                                                               'path'    => '/usr/lib/systemd/system/openafs-client.service',
+                                                               'owner'   => 'root',
+                                                               'group'   => 'root',
+                                                               'mode'    => '0755',
+                                                               'source'  => "puppet:///modules/afs/#{v[:systemd_unit_template]}",
+                                                               'before'  => 'Service[afs_openafs_client_service]')
         }
 
         # file { 'afs_config_cacheinfo' :}
@@ -85,11 +152,7 @@ describe 'afs' do
                                                                             'hasrestart' => 'false',
                                                                             'restart'    => '/bin/true',
                                                                             'status'     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
-                                                                            'require'    => [
-                                                                              'File[afs_init_script]',
-                                                                              'File[afs_config_cacheinfo]',
-                                                                              'File[afs_config_client]',
-                                                                            ])
+                                                                            'require'    => service_require)
         }
       end
 
@@ -275,6 +338,11 @@ describe 'afs' do
       )
     end
 
+    cron_require = [
+      'File[afs_init_script]',
+      'File[afs_systemd_script]',
+    ]
+
     ['hourly', 'daily', 'weekly', 'monthly'].each do |value|
       context "where afs_cron_job_interval is <#{value}>" do
         let :params do
@@ -290,7 +358,7 @@ describe 'afs' do
                                                            'group'   => 'root',
                                                            'mode'    => '0755',
                                                            'content' => '#!/bin/sh\\n/sw/RedHat/afs_setserverprefs.sh',
-                                                           'require' => 'File[afs_init_script]')
+                                                           'require' => cron_require)
         }
       end
     end
@@ -315,7 +383,7 @@ describe 'afs' do
                                                          'month'    => '2',
                                                          'weekday'  => '4',
                                                          'monthday' => '2',
-                                                         'require' => 'File[afs_init_script]')
+                                                         'require' => cron_require)
       }
     end
   end

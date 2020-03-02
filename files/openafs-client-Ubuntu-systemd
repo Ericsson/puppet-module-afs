@@ -1,0 +1,555 @@
+#!/bin/bash
+#
+# Copyright (c) 2019 AFS-Core Ericsson
+# Version v1.8, 2019-12-19
+#
+### BEGIN INIT INFO
+# Provides:             openafs-client
+# Required-Start:       $remote_fs $network $time
+# Required-Stop:        $remote_fs $network
+# Should-Start:         $syslog $named openafs-fileserver
+# Should-Stop:          openafs-fileserver
+# X-Stop-After:         autofs
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+# Short-Description:    OpenAFS client
+# Description:          Starts or stops the OpenAFS client, loading the
+#                       OpenAFS kernel module as necessary.
+### END INIT INFO
+#
+# Modified by Sam Hartman <hartmans@mit.edu> for Debian
+# Copyright 2000, International Business Machines Corporation and others.
+# All Rights Reserved.
+#
+# This software has been released under the terms of the IBM Public
+# License.  For details, see the LICENSE file in the top-level source
+# directory or online at http://www.openafs.org/dl/license10.html
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+export PATH
+
+CACHEINFO=${CACHEINFO:-/etc/openafs/cacheinfo}
+MODULEROOT=${MODULEROOT:-/lib/modules/$(uname -r)}
+MODULEDIR=${MODULEDIR:-$MODULEROOT/kernel/fs}
+DKMSDIR=${DKMSDIR:-$MODULEROOT/updates/dkms}
+AFS_KERNEL_MODULE=libafs
+OPENAFSDKMS=openafs-modules-dkms
+DEFAULTCELL="sunrise.ericsson.se"
+SUIDCELLS=/etc/openafs/SuidCells
+LOCKFILE="/var/lock/$(basename $0)"
+LOCKFD=99
+
+# Exit if the package is not installed.
+[ -x /sbin/afsd ] || exit 0
+
+# Define LSB log_* functions and get other support infrastructure.
+. /lib/lsb/init-functions
+
+exec 3>/dev/null
+exec </dev/null
+
+# Gather up options and post startup script name, if present
+if [ -f /etc/default/openafs-client ]; then
+  . /etc/default/openafs-client
+fi
+
+# Set the minimum required options for afsd if no options set in /etc/openafs/sysconfig.openafs-client
+AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb -nosettime"}
+UPDATE=${UPDATE:-"false"}
+DKMS=${DKMS:-"true"}
+
+noroot_check() {
+  if [ "$(whoami | awk '{print $1}' | cut -f2 -d\!)" != "root" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Lock
+lock_routine() {
+  if { flock -h; } >/dev/null 2>&1; then
+    _lock() { flock -$1 $LOCKFD; }
+    _no_more_locking() {
+      _lock u
+      _lock xn && rm -f $LOCKFILE
+    }
+    _prepare_locking() {
+      eval "exec $LOCKFD>\"$LOCKFILE\""
+      trap _no_more_locking EXIT
+    }
+    exlock_now() { _lock xn; } # obtain an exclusive lock immediately or fail
+    exlock() { _lock x; }      # obtain an exclusive lock
+    shlock() { _lock s; }      # obtain a shared lock
+    unlock() { _lock u; }      # drop a lock
+    _prepare_locking
+    return 0
+  else
+    return 1
+  fi
+}
+
+setsuid() {
+  if [ -f $SUIDCELLS ]; then
+    for CELLS in $(grep '^[^#]' $SUIDCELLS); do
+      echo "Setting $CELLS suid"
+      fs setcell -cell $CELLS -suid
+    done
+  fi
+}
+
+setnocrypt() {
+  fs setcrypt -crypt off
+}
+
+firstint() {
+  sed 's/^[^0-9]*//; s/[^0-9].*//'
+}
+
+get_cell() {
+  CELL=$(fs wscell 2>/dev/null | sed -e "s/.*to cell '\(.*\)'/\1/")
+  if [ -z "$CELL" ]; then
+    CELL="$DEFAULTCELL"
+  fi
+}
+
+get_dist_release() {
+  if LsbDistributor=$(lsb_release -si 2>/dev/null); then
+    LsbDescription=$(lsb_release -sd)
+    LsbRelease=$(lsb_release -sr | cut -d . -f -2)
+    case $LsbDistributor in
+      "SUSE"*)
+        if [[ $LsbDescription == *openSUSE* ]]; then
+          OS="openSuse"
+          _DIST="osuse"
+        else
+          OS=$(echo "$LsbDescription" -sd | cut -f1-4 -d" " | tr -cs '[:alpha:]' '[\n*]' | grep -v '^$' | cut -c1 | tr -d '[\n]')
+          _DIST="sle"
+          if [[ $LsbRelease != *.* ]]; then
+            patchlevel=$(awk '/^PATCHLEVEL/ {print $3}' /etc/SuSE-release 2>/dev/null)
+            LsbRelease=${LsbRelease}.${patchlevel:-0}
+          fi
+        fi
+        ;;
+      "RedHatEnterprise"* | "CentOS"*)
+        OS="RedHat"
+        _DIST="rhel"
+        ;;
+      "Ubuntu"*)
+        OS="Ubuntu"
+        _DIST="ubunt"
+        ;;
+      "Debian"*)
+        OS="Debian"
+        _DIST="deb"
+        ;;
+      "Fedora"*)
+        _DIST="fc"
+        ;;
+      *)
+        echo "Distribution not detected or not supported"
+        return
+        ;;
+    esac
+    Release="${LsbRelease}"
+  elif [ -f /etc/redhat-release ]; then
+    Release=$(
+      sed -n '
+      /Red Hat Enterprise /{s/^[^0-9]*\([0-9]\{1,\}[.]\{0,1\}[0-9]*\).*/\1/p;q;}
+      /CentOS /{s/^[^0-9]*\([0-9]\{1,\}[.]\{0,1\}[0-9]*\).*/\1/p;q;}
+    ' /etc/redhat-release
+    )
+    OS="RedHat"
+    _DIST="rhel"
+  fi
+}
+
+setsysname() {
+  _ARCH=$(uname -i | sed 's/x86_64/amd64/')
+  _DIST=""
+  _VER=""
+
+  get_dist_release
+  case "$_DIST" in
+    fc | deb)
+      return
+      ;;
+  esac
+  _VER=$(echo "$Release" | firstint)
+  # Sysname list.  The order here is from specific to general, with a
+  # fallback to the compiled-in value from sys.  This will be
+  # used as the sysname search path.
+  if { SYS=$(sys); } >/dev/null 2>&1; then
+    if [ -n "$_VER" ]; then
+      SYSNAMELIST="${_ARCH}_${_DIST}${_VER} $SYS"
+    fi
+  fi
+
+  # Set the sysname
+  if [ -n "$SYSNAMELIST" ]; then
+    SYSNAME=$(echo "$SYSNAMELIST" | awk 'BEGIN {ORS=" "} { for (i=1;i<=NF;i+=1) print "-newsys",$i }')
+    _CMD="fs sysname $SYSNAME"
+    echo "Setting sysname: $SYSNAMELIST"
+    $_CMD >/dev/null
+  fi
+}
+
+dkms_check() {
+  if [ "$DKMS" == "true" ]; then
+    dpkg --status $OPENAFSDKMS >/dev/null 2>&1
+    RETVAL=$?
+    if [ $RETVAL -ne 0 ]; then
+      echo -n $"Error: DKMS set to true but no package $OPENAFSDKMS installed"
+      echo
+      exit 1
+    fi
+    AFS_KERNEL_MODULE=openafs
+    return $RETVAL
+  else
+    return 1
+  fi
+}
+
+check_kernelmodule() {
+  KERNEL_VERSION=$(uname -r)
+  if dkms_check; then
+    # dkms status -m $AFS_KERNEL_MODULE -k `uname -r` | grep -w 'installed-weak' > /dev/null
+    # if [ $? -eq 0 ]; then
+    # echo
+    # echo "Weak module detected, will be removed.."
+    # if [ -h /lib/modules/`uname -r`/weak-updates/${AFS_KERNEL_MODULE}.ko ]; then
+    # rm -fv /lib/modules/`uname -r`/weak-updates/${AFS_KERNEL_MODULE}.ko
+    # fi
+    # echo
+    # echo "DKMS stuff ..."
+    # dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver `uname -r`
+    # fi
+    dkms status -m $AFS_KERNEL_MODULE -k "$KERNEL_VERSION" | grep ': installed$' >/dev/null
+    if [ $? -ne 0 ]; then
+      echo
+      echo "No kernel-module detected for $AFS_KERNEL_MODULE and kernel $(uname -r) .."
+      if { AFSVERSION=$(dpkg-query --showformat='${VERSION}' --show openafs-client | sed -e 's/-.*//'); } >/dev/null 2>&1; then
+        echo "DKMS stuff ..."
+        dkms add -m $AFS_KERNEL_MODULE -v $AFSVERSION --kernelver "$KERNEL_VERSION"
+        dkms autoinstall -m $AFS_KERNEL_MODULE --kernelver "$KERNEL_VERSION"
+      fi
+    fi
+    return 0
+  fi
+
+  modprobe $AFS_KERNEL_MODULE >/dev/null 2>&1
+  RETVAL=$?
+  [ $RETVAL -eq 0 ] && return 0 # Kernel module loaded, continue...
+
+  echo
+  echo -n $"Failed to load kernel module, attempting rebuild.."
+  if lock_routine; then
+    exlock_now || {
+      echo
+      echo " -> Lock-file $LOCKFILE exists! Will exit now."
+      exit 1
+    }
+  fi
+  echo
+
+  KMOD_BUILDLOG=/tmp/openafs-kmod-build-$(date +%Y%m%d-%H%M).log
+
+  echo "Build log for OpenAFS module: $(date)" >$KMOD_BUILDLOG
+
+  dpkg --status openafs-modules-source >/dev/null 2>&1
+  RETVAL=$?
+  if [ $RETVAL -eq 0 ]; then
+    if [ -f /usr/src/openafs.tar.bz2 ]; then
+      cd /usr/src || return 1
+      tar xjf /usr/src/openafs.tar.bz2
+      cd modules/openafs || return 1
+
+      make clean >>$KMOD_BUILDLOG 2>&1
+      ./configure --with-linux-kernel-headers=/lib/modules/$KERNEL_VERSION/build >>$KMOD_BUILDLOG 2>&1
+      make -j4 >>$KMOD_BUILDLOG 2>&1
+      if [ $? -eq 0 ]; then
+        MODULEDIR=/lib/modules/$KERNEL_VERSION/kernel/fs/openafs
+        [ ! -d $MODULEDIR ] && mkdir $MODULEDIR
+
+        for file in src/libafs/MODLOAD-$KERNEL_VERSION-*/openafs.ko; do
+          if [ -f "$file" ]; then
+            cp "$file" $MODULEDIR/
+            ln $MODULEDIR/openafs.ko $MODULEDIR/libafs.ko
+            break
+          else
+            cp src/libafs/MODLOAD-$KERNEL_VERSION-*/libafs.ko $MODULEDIR/
+          fi
+        done
+
+        depmod -a
+        modprobe $AFS_KERNEL_MODULE >>$KMOD_BUILDLOG 2>&1
+        RETVAL=$?
+      else
+        RETVAL=1
+      fi
+      [ $RETVAL -eq 0 ] && rm -f $KMOD_BUILDLOG && echo -n "Build succeeded!" && echo && return 0
+
+      echo -n "Failed to build kernel module."
+      echo "See $KMOD_BUILDLOG for more details."
+      echo
+      return 1
+    else
+      echo "No Modules source archive found: /usr/src/openafs.tar.bz2"
+      echo
+      return 1
+    fi
+  else
+    echo -n "OpenAFS Modules source not installed."
+    echo
+    return 1
+  fi
+}
+
+rm_wrong_module() {
+  # Only needed if dkms is not used
+  if dkms_check; then
+    return 0
+  fi
+  KERNEL_VERSION=$(uname -r)
+  module="$(modinfo -F filename $AFS_KERNEL_MODULE 2>/dev/null)"
+  if [ -f "$module" ]; then
+    mod_version=$(strings $module | awk '{ for (i=1; i<NF; i++) if ($i~/OpenAFS/) print $(i+1) }')
+    pkg_version=$(fs --version | awk '{print $2}')
+    if [ "$mod_version" != "$pkg_version" ]; then
+      rm $module
+      if [ -f "/lib/modules/$KERNEL_VERSION/kernel/fs/openafs/libafs.ko" ]; then
+        rm "/lib/modules/$KERNEL_VERSION/kernel/fs/openafs/libafs.ko"
+      fi
+      echo "Removed libafs.ko version mismatch: $mod_version <-> $pkg_version"
+    fi
+  fi
+}
+
+check() {
+  echo -n $"Checking openafs-client: "
+  if pidof /usr/sbin/afsd >/dev/null || pidof /sbin/afsd >/dev/null; then
+    get_cell
+    HEALTHCHECK=/afs/$CELL/afsadm/bin/afs_site_health_check.sh
+    if [ -x $HEALTHCHECK ]; then
+      $HEALTHCHECK
+    else
+      echo -n $"Check-script not available: $HEALTHCHECK"
+      echo
+      return 1
+    fi
+  else
+    echo -n $"cannot check openafs-client: not running"
+    echo
+    return 1
+  fi
+}
+
+# Determine if kernel module loading is disabled.  If it's not, don't attempt
+# to stop or restart AFS, since we'll end up in a bad inconsistent state.
+is_loading_disabled() {
+  disabled=$(cat /proc/sys/kernel/modules_disabled 2>/dev/null)
+  if [ "$disabled" = 1 ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Load the AFS client module if it's not already loaded.  Set $MODULEDIR and
+# $LIBAFS to override the default location and module name.  Also check before
+# loading whether the module is listed in the module dependencies so that we
+# can exit with a 0 status in that case.
+load_client() {
+  if [ "$DKMS" == "true" ]; then
+    AFS_KERNEL_MODULE=openafs
+    # Check if no dkms session is running already
+    if { pgrep -f "dkms .* -m $AFS_KERNEL_MODULE"; } >/dev/null 2>&1; then
+      echo "A dkms-session is running to install/remove $AFS_KERNEL_MODULE, will exit now."
+      exit 1
+    fi
+  fi
+  if check_kernelmodule; then
+    sawdep=0
+    if grep -q "$AFS_KERNEL_MODULE" "$MODULEROOT/modules.dep"; then
+      sawdep=1
+    fi
+    LOADED=$(lsmod | fgrep "$AFS_KERNEL_MODULE")
+    if [ -z "$LOADED" ]; then
+      if dkms_check; then
+        modprobe $AFS_KERNEL_MODULE
+        status=$?
+        if [ $status = 0 ]; then
+          echo -n " openafs"
+        fi
+
+        # We must exit successfully here if the openafs module just isn't
+        # listed in the dependency information for modprobe, which can happen
+        # if openafs-client and the module package are installed at the same
+        # time and the module hasn't been set up yet.
+        if [ $sawdep = 0 ]; then
+          return 0
+        else
+          return $status
+        fi
+      fi
+    fi
+    return 0
+  else
+    echo -n "failed to load openafs kernel module."
+    return 1
+  fi
+}
+
+# Start afsd.  Be careful not to start it if another one is already running,
+# as that has a bad tendency to hang the system.  Earlier versions of the
+# openafs-client package put afsd in /usr/sbin.
+start_client() {
+  if pidof /sbin/afsd >/dev/null || pidof /usr/sbin/afsd >/dev/null; then
+    echo "."
+  else
+    echo " afsd."
+    start-stop-daemon --start --quiet --exec /sbin/afsd -- $AFSD_ARGS
+    setsysname
+    setsuid
+    setnocrypt
+    get_cell
+    SETSERVERPREFS=/afs/$CELL/afsadm/sbin/afs_setserverprefs.sh
+    # background job that should run after the AFS initialization...
+    (
+      sleep 60
+      [ -x $SETSERVERPREFS ] && $SETSERVERPREFS
+    ) </dev/null >/dev/null 2>&1 &
+  fi
+}
+
+# Kill all processes that are accessing AFS.  Not enabled by default, and
+# normally called via kill_all_afs.
+kill_afs() {
+  signal=$1
+  mount=$(grep ^'AFS ' /etc/mtab | awk '{ print $2 }')
+  if [ -n "$mount" ]; then
+    pids=$(lsof -Fp $mount | sed 's/p//')
+    if [ -n "$pids" ]; then
+      kill -$signal $pids >/dev/null 2>&1
+      sleep 1
+    fi
+  fi
+}
+
+# Repeatedly call kill_afs for a series of signals to give AFS-using processes
+# a hope of shutting down cleanly if the system is shutting down.  Not enabled
+# by default.  Enable this in /etc/openafs/afs.conf.
+#
+# Warns and does nothing if lsof is not installed.
+kill_all_afs() {
+  if { lsof -h; } >/dev/null 2>&1; then
+    echo -n "Killing processes with AFS files open: "
+    kill_afs HUP
+    kill_afs TERM
+    kill_afs ABRT
+    kill_afs KILL
+    echo "done."
+  else
+    echo 'lsof not found, not killing processes' >&2
+  fi
+}
+
+case "$1" in
+  start)
+    if noroot_check; then
+      echo "Script has to be run as root"
+      exit 1
+    fi
+    if test -x /sbin/afsd; then
+      echo -n "Starting AFS services:"
+      rm_wrong_module
+      if load_client; then
+        start_client
+      else
+        echo ""
+        echo "Failed to load AFS kernel module, not starting AFS" >&2
+        exit 1
+      fi
+    fi
+    ;;
+
+  stop)
+    if noroot_check; then
+      echo "Script has to be run as root"
+      exit 1
+    fi
+    if is_loading_disabled; then
+      echo "Module loading disabled, cannot stop AFS" >&2
+      exit 1
+    fi
+    echo -n "Stopping AFS services:"
+    if grep -q '^AFS ' /etc/mtab; then
+      umount "$(awk '/^AFS / {print $2}' /etc/mtab)"
+      echo -n " afsd"
+    fi
+    if pidof /usr/sbin/afsd >/dev/null || pidof /sbin/afsd >/dev/null; then
+      afsd -shutdown
+    fi
+
+    # If running with the -rmtsys option, afsd doesn't kill the rmtsys helper
+    # on afsd -shutdown.  Run start-stop-daemon to make sure that everything
+    # is dead.
+    start-stop-daemon --stop --quiet --name afsd
+
+    AFS_KERNEL_MODULE=$(lsmod | awk 'BEGIN { FS = " " } /afs/ { print $1 }')
+    if [ -n "$AFS_KERNEL_MODULE" ]; then
+      rmmod $AFS_KERNEL_MODULE
+      echo -n " openafs"
+    fi
+    echo "."
+    ;;
+
+  stop-force)
+    if noroot_check; then
+      echo "Script has to be run as root"
+      exit 1
+    fi
+    if is_loading_disabled; then
+      echo "Module loading disabled, cannot stop AFS" >&2
+      exit 1
+    fi
+    echo -n "Stopping AFS services:"
+    if grep -q '^AFS ' /etc/mtab; then
+      kill_all_afs
+      umount "$(awk '/^AFS / {print $2}' /etc/mtab)"
+      echo -n " afsd"
+    fi
+
+    if pidof /usr/sbin/afsd >/dev/null || pidof /sbin/afsd >/dev/null; then
+      afsd -shutdown
+    fi
+
+    # If running with the -rmtsys option, afsd doesn't kill the rmtsys helper
+    # on afsd -shutdown.  Run start-stop-daemon to make sure that everything
+    # is dead.
+    start-stop-daemon --stop --quiet --name afsd
+
+    AFS_KERNEL_MODULE=$(lsmod | awk 'BEGIN { FS = " " } /afs/ { print $1 }')
+    if [ -n "$AFS_KERNEL_MODULE" ]; then
+      rmmod $AFS_KERNEL_MODULE
+      echo -n " openafs"
+    fi
+    echo "."
+    ;;
+
+  restart | force-reload)
+    "$0" stop
+    "$0" start
+    ;;
+
+  check)
+    check
+    ;;
+
+  *)
+    echo Usage: \
+      'openafs-client {start|stop|stop-force|restart|check|force-reload}' >&2
+    exit 1
+    ;;
+
+esac
