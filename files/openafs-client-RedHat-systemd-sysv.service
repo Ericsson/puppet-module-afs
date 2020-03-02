@@ -1,0 +1,20 @@
+[Unit]
+SourcePath=/etc/rc.d/init.d/openafs-client
+Description=SYSV: OpenAFS Client Service
+Wants=network-online.target
+After=syslog.target network-online.target
+Before=remote-fs.target
+
+[Service]
+Type=forking
+Restart=no
+TimeoutSec=25min
+IgnoreSIGPIPE=no
+KillMode=none
+GuessMainPID=no
+RemainAfterExit=yes
+ExecStart=/etc/rc.d/init.d/openafs-client start
+ExecStop=/etc/rc.d/init.d/openafs-client stop
+
+[Install]
+WantedBy=multi-user.target remote-fs.target
