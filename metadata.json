@@ -1,6 +1,6 @@
 {
   "name": "kodguru-afs",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "author": "kodguru",
   "summary": "Manage OpenAFS",
   "license": "Apache-2.0",
