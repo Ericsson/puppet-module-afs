@@ -298,7 +298,7 @@ class afs (
     path   => '/usr/lib/systemd/system/openafs-client.service',
     owner  => 'root',
     group  => 'root',
-    mode   => '0755',
+    mode   => '0644',
     source => "puppet:///modules/afs/${systemd_unit_template}", # lint:ignore:fileserver
   }
 
