@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Copyright (c) 2020 AFS-Core Ericsson
-# Version v1.23, 2020-06-15
+# Version v1.24, 2020-06-17
 #
 # openafs-client	Start/Stop the OpenAFS Client
 #
@@ -31,6 +31,7 @@ LOCKFD=99
 AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb"}
 UPDATE=${UPDATE:-"false"}
 DKMS=${DKMS:-"true"}
+CHKKERNELPACK=${CHKKERNELPACK:-"true"}
 CLEANCACHE=${CLEANCACHE:-"false"}
 
 noroot_check() {
@@ -194,6 +195,18 @@ dkms_check() {
   fi
 }
 
+check_kernelpackages() {
+  KERNEL_VERSION="$1"
+  if [ -n "$KERNEL_VERSION" ]; then
+    if ! { rpm -q kernel-headers-$KERNEL_VERSION kernel-devel-$KERNEL_VERSION; } >/dev/null 2>&1; then
+      echo "Needed packages for running kernel $KERNEL_VERSION missing: kernel-headers-$KERNEL_VERSION kernel-devel-$KERNEL_VERSION"
+      echo "Try to install..."
+      yum --nogpgcheck -q -y install kernel-headers-$KERNEL_VERSION kernel-devel-$KERNEL_VERSION
+      CHKKERNELPACK="false"
+    fi
+  fi
+}
+
 check_kernelmodule() {
   KERNEL_VERSION=$(uname -r)
   if dkms_check; then
@@ -213,6 +226,9 @@ check_kernelmodule() {
         rm -fv /lib/modules/"$KERNEL_VERSION"/weak-updates/${AFS_KERNEL_MODULE}.ko.xz
       fi
       echo
+      if [ "$CHKKERNELPACK" == "true" ]; then
+        check_kernelpackages $KERNEL_VERSION
+      fi
       if ! dkms install "$AFS_KERNEL_MODULE/$OPENAFS_VERSION_FULL" -k "$KERNEL_VERSION" --no-initrd; then
         echo "DKMS install problem for $AFS_KERNEL_MODULE/$OPENAFS_VERSION_FULL $KERNEL_VERSION, will try to relink from other kernel version..."
         if [ -n "$TARGETLINK" ]; then
@@ -241,8 +257,12 @@ check_kernelmodule() {
       echo
       echo "No kernel-module detected for $AFS_KERNEL_MODULE version $OPENAFS_VERSION_FULL and kernel $KERNEL_VERSION .."
       echo "DKMS stuff ..."
+      if [ "$CHKKERNELPACK" == "true" ]; then
+        check_kernelpackages $KERNEL_VERSION
+      fi
       if ! dkms install "$AFS_KERNEL_MODULE/$OPENAFS_VERSION_FULL" -k "$KERNEL_VERSION" --no-initrd; then
         echo "DKMS install problem for $AFS_KERNEL_MODULE/$OPENAFS_VERSION_FULL $KERNEL_VERSION"
+        return 1
       fi
     fi
     return 0
@@ -267,6 +287,9 @@ check_kernelmodule() {
   KMOD_BUILDLOG=/tmp/openafs-kmod-build-$(date +%Y%m%d-%H%M).log
 
   echo "Build log for OpenAFS module: $(date)" >$KMOD_BUILDLOG
+  if [ "$CHKKERNELPACK" == "true" ]; then
+    check_kernelpackages $KERNEL_VERSION
+  fi
 
   if [ -d /usr/src/openafs-kernel-$OPENAFS_VERSION/src ] && [ -f /usr/src/openafs-kernel-$OPENAFS_VERSION/src/configure ]; then
     cd /usr/src/openafs-kernel-$OPENAFS_VERSION/src || return 1
