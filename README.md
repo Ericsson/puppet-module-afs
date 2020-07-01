@@ -1,4 +1,4 @@
-# puppet-module-fs
+# puppet-module-afs
 
 #### Table of Contents
 
