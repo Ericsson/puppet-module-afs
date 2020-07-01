@@ -1,6 +1,35 @@
 # Changelog
 
-## [v2.0.0](https://github.com/kodguru/puppet-module-afs/tree/v2.2.0) (2020-01-09)
+## [v2.0.1](https://github.com/kodguru/puppet-module-afs/tree/v2.0.1) (2020-07-01)
+
+[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v2.0.0...v2.0.1)
+
+**Merged pull requests:**
+
+- Update startup scripts for RHEL - Improve handling of missing module dependencies for running kernel [\#93](https://github.com/kodguru/puppet-module-afs/pull/93) ([eralbru](https://github.com/eralbru))
+- Improvement in RedHat startup-scripts: Adding DKMS check routine to fix \(original module exists\) [\#91](https://github.com/kodguru/puppet-module-afs/pull/91) ([eralbru](https://github.com/eralbru))
+- Remove execute flag from systemd unit [\#90](https://github.com/kodguru/puppet-module-afs/pull/90) ([anders-larsson](https://github.com/anders-larsson))
+
+## [v1.7.2](https://github.com/kodguru/puppet-module-afs/tree/v1.7.2) (2020-07-01)
+
+[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v1.7.1...v1.7.2)
+
+**Merged pull requests:**
+
+- Update startup scripts for RHEL - Improve handling of missing module dependencies for running kernel [\#94](https://github.com/kodguru/puppet-module-afs/pull/94) ([eralbru](https://github.com/eralbru))
+- Improvement in RedHat startup-scripts: Adding DKMS check routine to fix \(original module exists\) [\#92](https://github.com/kodguru/puppet-module-afs/pull/92) ([eralbru](https://github.com/eralbru))
+
+## [v1.7.1](https://github.com/kodguru/puppet-module-afs/tree/v1.7.1) (2020-03-02)
+
+[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v2.0.0...v1.7.1)
+
+**Merged pull requests:**
+
+- Remove legacy -nosettime option from SySV startup-scripts \(v1 branch\) [\#89](https://github.com/kodguru/puppet-module-afs/pull/89) ([anders-larsson](https://github.com/anders-larsson))
+
+## [v2.0.0](https://github.com/kodguru/puppet-module-afs/tree/v2.0.0) (2020-03-02)
+
+[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v1.7.0...v2.0.0)
 
 **Merged pull requests:**
 
