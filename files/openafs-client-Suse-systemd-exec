@@ -1,13 +1,12 @@
 #!/bin/bash
 #
 # Copyright (c) 2020 AFS-Core Ericsson
-# Version v1.22, 2020-01-10
+# Version v1.23, 2020-07-15
 #
 # systemd-exec.openafs-client   native system exec-script
 #
 
 DAEMON="OpenAFS Client"
-SUPPORTS_HUP="no"
 DAEMON_BIN=/usr/sbin/afsd
 AFS_KERNEL_MODULE=libafs
 AFS=/afs
@@ -77,10 +76,10 @@ lock_routine() {
 
 setsuid() {
   if [ -f $SUIDCELLS ]; then
-    for CELLS in $(grep '^[^#]' $SUIDCELLS); do
+    while read -r CELLS; do
       echo "Setting $CELLS suid"
       fs setcell -cell $CELLS -suid
-    done
+    done <<<"$(grep '^[^#]' $SUIDCELLS)"
   fi
 }
 
@@ -109,7 +108,7 @@ get_dist_release() {
           OS="openSuse"
           _DIST="osuse"
         else
-          OS=$(echo "$LsbDescription" -sd | cut -f1-4 -d" " | tr -cs '[:alpha:]' '[\n*]' | grep -v '^$' | cut -c1 | tr -d '[\n]')
+          OS=$(echo "$LsbDescription" | cut -f1-4 -d" " | sed -e 's/\([a-zA-Z]\)[^ ]* */\1/g' -e 's/"//')
           _DIST="sle"
           if [[ $LsbRelease != *.* ]]; then
             patchlevel=$(awk '/^PATCHLEVEL/ {print $3}' /etc/SuSE-release 2>/dev/null)
@@ -183,7 +182,7 @@ setsysname() {
 killafs() {
   SIGNAL=$1
   PIDS=$(lsof -Fp $AFS | sed -e 's/p//')
-  if [ "x" != "x$PIDS" ]; then
+  if [ -n "$PIDS" ]; then
     kill -$SIGNAL $PIDS >/dev/null 2>&1
     sleep 3
   fi
@@ -328,8 +327,7 @@ case "$1" in
       package_update
       rm_wrong_module
       if check_kernelmodule; then
-        ps ax | grep -q '\[afsd\]'
-        if [ $? -ne 0 ]; then
+        if ! pgrep -xf 'afsd' &>/dev/null; then
           if [ "$CLEANCACHE" == "true" ]; then
             if [ "${CACHEDIR}" == "/usr/vice/cache" ] || [ "${CACHEDIR}" == "/var/cache/openafs" ]; then
               if [ -d ${CACHEDIR} ]; then
@@ -371,7 +369,7 @@ case "$1" in
       exit 4
     fi
     echo -n "Shutting down $DAEMON "
-    if ps ax | grep -q '\[afsd\]'; then
+    if pgrep -xf 'afsd' &>/dev/null; then
       umount $AFS
       RETVAL=$?
       if [ $RETVAL -eq 0 ]; then
@@ -399,7 +397,7 @@ case "$1" in
       exit 4
     fi
     echo -n "Shutting down $DAEMON "
-    if ps ax | grep -q '\[afsd\]'; then
+    if pgrep -xf 'afsd' &>/dev/null; then
       echo
       echo "Sending all processes using $AFS the TERM signal ..."
       killafs TERM
@@ -446,13 +444,13 @@ case "$1" in
 
     # NOTE: checkproc returns LSB compliant status values.
 
-    ps ax | grep -q '\[afsd\]' || rc_failed 3
+    pgrep -xf 'afsd' &>/dev/null || rc_failed 3
 
     rc_status -v
     ;;
   check)
     echo -n "Checking $DAEMON "
-    if ps ax | grep -q '\[afsd\]'; then
+    if pgrep -xf 'afsd' &>/dev/null; then
       get_cell
       HEALTHCHECK=/afs/$CELL/afsadm/bin/afs_site_health_check.sh
       if [ -x $HEALTHCHECK ]; then
