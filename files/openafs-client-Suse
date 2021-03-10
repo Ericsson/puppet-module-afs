@@ -49,6 +49,7 @@ export PATH
 # Set the minimum required options for afsd if no options set in /etc/sysconfig/openafs-client
 AFSD_ARGS=${AFSD_ARGS:-"-dynroot -afsdb"}
 UPDATE=${UPDATE:-"false"}
+CHKKERNELPACK=${CHKKERNELPACK:-"true"}
 CLEANCACHE=${CLEANCACHE:-"false"}
 
 noroot_check() {
@@ -200,6 +201,41 @@ killafs() {
   fi
 }
 
+check_kernelpackages() {
+  KERNEL_VERSION="$1"
+  # Output from `uname -r` does not match package version. Get it by checking vmlinuz image
+  KERNEL_PKG=$(rpm -qf /boot/vmlinuz-${KERNEL_VERSION})
+  KERNEL_PKG_VERSION=$(rpm -q --queryformat '%{version}-%{release}' "${KERNEL_PKG}")
+  # Get kernel type such as: xen, trace etc.
+  KERNEL_TYPE=$(echo $KERNEL_PKG | cut -d- -f2)
+
+  if [ -f /etc/os-release ]; then
+    FULL_RELEASE=$(awk -F'"' '/VERSION_ID/ { print $2 }' /etc/os-release)
+    MAJOR_RELEASE=$(echo $FULL_RELEASE | cut -d. -f1)
+    MINOR_RELEASE=$(echo $FULL_RELEASE | cut -d. -f2)
+  else
+    MAJOR_RELEASE=$(awk '/VERSION/ { print $3 }' /etc/SuSE-release)
+    MINOR_RELEASE=$(awk '/PATCHLEVEL/ { print $3 }' /etc/SuSE-release)
+  fi
+
+  if [ $MAJOR_RELEASE -ge 12 ]; then
+    PKG_ARGS="--oldpackage"
+    KERNEL_PACKAGES="kernel-${KERNEL_TYPE}-devel-${KERNEL_PKG_VERSION} kernel-devel-${KERNEL_PKG_VERSION}"
+  elif [ $MAJOR_RELEASE -ge 11 ] && [ $MINOR_RELEASE -ge 1 ]; then
+    PKG_ARGS="--oldpackage"
+    KERNEL_PACKAGES="kernel-${KERNEL_TYPE}-devel-${KERNEL_PKG_VERSION} kernel-source-${KERNEL_PKG_VERSION}"
+  else
+    PKG_ARGS=""
+    KERNEL_PACKAGES="kernel-source-${KERNEL_PKG_VERSION}"
+  fi
+
+  if ! { rpm -q $KERNEL_PACKAGES; } >/dev/null 2>&1; then
+    echo "Needed packages for running kernel ${KERNEL_VERSION} missing: ${KERNEL_PACKAGES}"
+    echo "Try to install..."
+    zypper -q install -y ${PKG_ARGS} ${KERNEL_PACKAGES}
+  fi
+}
+
 check_kernelmodule() {
   modprobe --allow-unsupported-modules -V $AFS_KERNEL_MODULE >/dev/null 2>&1
   RETVAL=$?
@@ -223,6 +259,10 @@ check_kernelmodule() {
   KERNEL_VERSION=$(uname -r)
   KMOD_BUILDLOG=/tmp/openafs-kmod-build-$(date +%Y%m%d-%H%M).log
   echo "Build log for OpenAFS module: $(date)" >$KMOD_BUILDLOG
+  if [ "$CHKKERNELPACK" == "true" ]; then
+    check_kernelpackages $KERNEL_VERSION
+  fi
+
   if [ -d /usr/src/kernel-modules/openafs/libafs_tree ]; then
     cd /usr/src/kernel-modules/openafs/libafs_tree || return 1
     make clean >>$KMOD_BUILDLOG 2>&1
