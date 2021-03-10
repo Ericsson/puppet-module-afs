@@ -459,7 +459,9 @@ describe 'afs' do
         var[:params] = {} if var[:params].nil?
         var[:valid].each do |valid|
           context "when #{var_name} (#{type}) is set to valid #{valid} (as #{valid.class})" do
+            # rubocop:disable Style/HashSyntax
             let(:params) { [mandatory_params, var[:params], { :"#{var_name}" => valid }].reduce(:merge) }
+            # rubocop:enable Style/HashSyntax
 
             it { is_expected.to compile }
           end
@@ -467,7 +469,9 @@ describe 'afs' do
 
         var[:invalid].each do |invalid|
           context "when #{var_name} (#{type}) is set to invalid #{invalid} (as #{invalid.class})" do
+            # rubocop:disable Style/HashSyntax
             let(:params) { [mandatory_params, var[:params], { :"#{var_name}" => invalid }].reduce(:merge) }
+            # rubocop:enable Style/HashSyntax
 
             it 'fails' do
               expect { is_expected.to contain_class(:subject) }.to raise_error(Puppet::Error, %r{#{var[:message]}})
