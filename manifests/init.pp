@@ -208,7 +208,7 @@ class afs (
     ]
   } elsif $systemd_unit_template {
     assert_type(String, $systemd_script_template) |$expected, $actual| {
-      fail("afs::systemd_script_template must be ${expected} when afs::systemd_unit_template is set but not afs::init_template. Got ${actual}.")
+      fail("afs::systemd_script_template must be ${expected} when afs::systemd_unit_template is set but not afs::init_template. Got ${actual}.") #lint:ignore:140chars
     }
     $init_script_ensure = 'absent'
     $systemd_script_ensure = 'file'
