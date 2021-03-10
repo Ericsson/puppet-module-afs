@@ -22,6 +22,7 @@ For other OSfamilies support, please specify all parameters which defaults to 'U
 
 
 # Version history #
+* 1.7.3 2021-03-10 Handle required module packages in Suse scripts
 * 1.7.2 2020-07-01 Improve handling of DKMS and kernel module dependencies on RedHat
 * 1.7.1 2020-03-02 Remove option -nosettime
 * 1.7.0 2020-01-09 Add support for Suse 15 and init-script improvements
