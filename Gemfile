@@ -7,7 +7,6 @@ else
 end
 
 gem 'facter', '>= 1.7.0'
-gem 'rspec-puppet', '~> 2.0'
 gem 'puppet-lint', '~> 2.0'
 gem 'puppet-lint-absolute_classname-check'
 gem 'puppet-lint-alias-check'
@@ -21,10 +20,11 @@ gem 'puppet-lint-undef_in_function-check'
 gem 'puppet-lint-unquoted_string-check'
 gem 'puppet-lint-variable_contains_upcase'
 
+gem 'rspec-puppet',       '~> 2.7.0' if RUBY_VERSION < '2.0.0'
 gem 'json',               '<= 1.8'   if RUBY_VERSION < '2.0.0'
 gem 'json_pure',          '<= 2.0.1' if RUBY_VERSION < '2.0.0'
 gem 'metadata-json-lint', '1.0.0'    if RUBY_VERSION >= '1.9' && RUBY_VERSION < '2.0'
 gem 'metadata-json-lint'             if RUBY_VERSION >= '2.0'
 
-gem 'puppetlabs_spec_helper', '>= 2.0.0', :require => false if RUBY_VERSION >= '1.9'
+gem 'puppetlabs_spec_helper', '~> 2.7',   :require => false if RUBY_VERSION >= '1.9'
 gem 'parallel_tests',         '<= 2.9.0', :require => false if RUBY_VERSION < '2.0.0'
