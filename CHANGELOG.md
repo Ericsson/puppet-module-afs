@@ -1,13 +1,22 @@
 # Changelog
 
+## [v2.2.0](https://github.com/kodguru/puppet-module-afs/tree/v2.2.0) (2021-03-10)
+
+[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v2.1.0...v2.2.0)
+
+**Merged pull requests:**
+
+- Update PDK to 2.0.0 [\#101](https://github.com/kodguru/puppet-module-afs/pull/101) ([anders-larsson](https://github.com/anders-larsson))
+- Handle required module packages in Suse scripts [\#100](https://github.com/kodguru/puppet-module-afs/pull/100) ([anders-larsson](https://github.com/anders-larsson))
+
 ## [v2.1.0](https://github.com/kodguru/puppet-module-afs/tree/v2.1.0) (2020-10-16)
 
 [Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v2.0.1...v2.1.0)
 
 **Merged pull requests:**
 
+- Add support for Ubuntu 20.04 [\#99](https://github.com/kodguru/puppet-module-afs/pull/99) ([anders-larsson](https://github.com/anders-larsson))
 - LX-startscript-improvements + non-support for kernel.debug [\#97](https://github.com/kodguru/puppet-module-afs/pull/97) ([eralbru](https://github.com/eralbru))
-- Add support for Ubuntu 20.04 [\#98](https://github.com/kodguru/puppet-module-afs/pull/99) ([elonars](https://github.com/anders-larsson))
 
 ## [v2.0.1](https://github.com/kodguru/puppet-module-afs/tree/v2.0.1) (2020-07-01)
 
