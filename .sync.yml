@@ -1,19 +1,25 @@
+---
+appveyor.yml:
+  delete: true
+
+.gitlab-ci.yml:
+  delete: true
+
 .travis.yml:
-  branches:
-    - main
-    - /^v\d/
-    - master
+  delete: true
+
 spec/spec_helper.rb:
+  coverage_report: true
+  # TODO: reach from ~70% coverage to 100% and enable testing it
+  # minimum_code_coverage_percentage: 100
   hiera_config: 'hiera'
   mock_with: ':rspec'
-Gemfile:
-  required:
-    ':development':
-      - gem: github_changelog_generator
-Rakefile:
-  extras:
-    - "require 'github_changelog_generator/task'"
-    - 'GitHubChangelogGenerator::RakeTask.new :changelog do |config|'
-    - '  version = (Blacksmith::Modulefile.new).version'
-    - '  config.exclude_labels = %w{duplicate question invalid wontfix modulesync}'
-    - 'end'
+
+# Disabled as the associate Ruby Gem has unmet dependency issues (2021-07-26)
+#Rakefile:
+#  extras:
+#    - "require 'github_changelog_generator/task'"
+#    - 'GitHubChangelogGenerator::RakeTask.new :changelog do |config|'
+#    - '  version = (Blacksmith::Modulefile.new).version'
+#    - '  config.exclude_labels = %w{duplicate question invalid wontfix modulesync}'
+#    - 'end'
