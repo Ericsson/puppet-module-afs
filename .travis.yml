@@ -1,5 +1,9 @@
 ---
 os: linux
+arch:
+  - arm64
+  - ppc64le
+  - s390x
 dist: xenial
 language: ruby
 cache: bundler
@@ -37,10 +41,10 @@ jobs:
     -
       env: DEPLOY_TO_FORGE=yes
       stage: deploy
-branches:
-  only:
-    - main
-    - /^v\d/
-    - master
+#branches:
+#  only:
+#    - main
+#    - /^v\d/
+#    - master
 notifications:
   email: false
