@@ -86,8 +86,3 @@ EOM
   end
 end
 
-require 'github_changelog_generator/task'
-GitHubChangelogGenerator::RakeTask.new :changelog do |config|
-  version = (Blacksmith::Modulefile.new).version
-  config.exclude_labels = %w{duplicate question invalid wontfix modulesync}
-end
