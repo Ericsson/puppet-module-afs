@@ -106,13 +106,17 @@ init:
   Solaris
   Suse 10
   Suse 11
-  Ubuntu
+  Ubuntu 12.04
+  Ubuntu 14.04
+  Ubuntu 16.04
 hybrid:
   Suse 12
   EL7
 systemd:
   Suse 15
   EL 8
+  Ubuntu 18.04
+  Ubuntu 20.04
 ```
 
 Hybrid will use systemd to execute the init-script which will start the service.
