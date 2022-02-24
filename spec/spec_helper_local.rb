@@ -47,6 +47,19 @@ def platforms
         package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
         allow_unsupported_modules: false,
       },
+    'RedHat-9-x86_64' =>
+      {
+        afs_config_path: '/usr/vice/etc',
+        cache_path: '/usr/vice/cache',
+        config_client_dkms: true,
+        config_client_path: '/etc/sysconfig/openafs-client',
+        service_provider: 'systemd',
+        init_script: '/etc/init.d/openafs-client',
+        systemd_script_template: 'openafs-client-RedHat-systemd-exec',
+        systemd_unit_template: 'openafs-client-RedHat-systemd-exec.service',
+        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
+        allow_unsupported_modules: false,
+      },
     'CentOS-5-x86_64' =>
       {
         afs_config_path: '/usr/vice/etc',
@@ -82,6 +95,19 @@ def platforms
         allow_unsupported_modules: false,
       },
     'CentOS-8-x86_64' =>
+      {
+        afs_config_path: '/usr/vice/etc',
+        cache_path: '/usr/vice/cache',
+        config_client_dkms: true,
+        config_client_path: '/etc/sysconfig/openafs-client',
+        service_provider: 'systemd',
+        init_script: '/etc/init.d/openafs-client',
+        systemd_script_template: 'openafs-client-RedHat-systemd-exec',
+        systemd_unit_template: 'openafs-client-RedHat-systemd-exec.service',
+        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
+        allow_unsupported_modules: false,
+      },
+    'CentOS-9-x86_64' =>
       {
         afs_config_path: '/usr/vice/etc',
         cache_path: '/usr/vice/cache',
@@ -131,6 +157,19 @@ def platforms
     'OracleLinux-8-x86_64' =>
       {
         kernel: 'Linux',
+        afs_config_path: '/usr/vice/etc',
+        cache_path: '/usr/vice/cache',
+        config_client_dkms: true,
+        config_client_path: '/etc/sysconfig/openafs-client',
+        service_provider: 'systemd',
+        init_script: '/etc/init.d/openafs-client',
+        systemd_script_template: 'openafs-client-RedHat-systemd-exec',
+        systemd_unit_template: 'openafs-client-RedHat-systemd-exec.service',
+        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
+        allow_unsupported_modules: false,
+      },
+    'OracleLinux-9-x86_64' =>
+      {
         afs_config_path: '/usr/vice/etc',
         cache_path: '/usr/vice/cache',
         config_client_dkms: true,
