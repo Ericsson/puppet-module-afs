@@ -101,18 +101,15 @@ There are three different modes the module can handle services. The supported
 operating systems has been configured according to the list below:
 ```
 init:
-  EL5
-  EL6
-  Solaris
-  Suse 10
-  Suse 11
+  <= EL6
+  <= Suse 11
   Ubuntu
+  Solaris
 hybrid:
   Suse 12
   EL7
 systemd:
-  Suse 15
-  EL 8
+  All versions not specified under `init` or `hybrid`.
 ```
 
 Hybrid will use systemd to execute the init-script which will start the service.
