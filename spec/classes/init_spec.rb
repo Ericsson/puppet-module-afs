@@ -1,7 +1,11 @@
 require 'spec_helper'
 describe 'afs' do
   on_supported_os.each do |os, os_facts|
-    os_data = platforms["#{os_facts[:os]['name']}-#{os_facts[:os]['release']['major']}-#{os_facts[:os]['architecture']}"]
+    os_data = if platforms["#{os_facts[:os]['family']}-#{os_facts[:os]['release']['major']}-#{os_facts[:os]['architecture']}"]
+                platforms["#{os_facts[:os]['family']}-#{os_facts[:os]['release']['major']}-#{os_facts[:os]['architecture']}"]
+              else
+                platforms["#{os_facts[:os]['name']}-#{os_facts[:os]['release']['major']}-#{os_facts[:os]['architecture']}"]
+              end
 
     # Hybrid installation with both init script and systemd unit
     if !os_data[:init_template].nil? && !os_data[:systemd_unit_template].nil?
