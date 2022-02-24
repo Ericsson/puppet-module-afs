@@ -60,175 +60,7 @@ def platforms
         package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
         allow_unsupported_modules: false,
       },
-    'CentOS-5-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        init_script: '/etc/init.d/openafs-client',
-        init_template: 'openafs-client-RedHat-init',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i386'],
-        allow_unsupported_modules: false,
-      },
-    'CentOS-6-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        init_script: '/etc/init.d/openafs-client',
-        init_template: 'openafs-client-RedHat-init',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
-        allow_unsupported_modules: false,
-      },
-    'CentOS-7-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        init_script: '/etc/init.d/openafs-client',
-        init_template: 'openafs-client-RedHat-init',
-        systemd_unit_template: 'openafs-client-RedHat-systemd-sysv.service',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
-        allow_unsupported_modules: false,
-      },
-    'CentOS-8-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        service_provider: 'systemd',
-        init_script: '/etc/init.d/openafs-client',
-        systemd_script_template: 'openafs-client-RedHat-systemd-exec',
-        systemd_unit_template: 'openafs-client-RedHat-systemd-exec.service',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
-        allow_unsupported_modules: false,
-      },
-    'CentOS-9-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        service_provider: 'systemd',
-        init_script: '/etc/init.d/openafs-client',
-        systemd_script_template: 'openafs-client-RedHat-systemd-exec',
-        systemd_unit_template: 'openafs-client-RedHat-systemd-exec.service',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
-        allow_unsupported_modules: false,
-      },
-    'OracleLinux-5-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        init_script: '/etc/init.d/openafs-client',
-        init_template: 'openafs-client-RedHat-init',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i386'],
-        allow_unsupported_modules: false,
-      },
-    'OracleLinux-6-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        init_script: '/etc/init.d/openafs-client',
-        init_template: 'openafs-client-RedHat-init',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
-        allow_unsupported_modules: false,
-      },
-    'OracleLinux-7-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        init_script: '/etc/init.d/openafs-client',
-        init_template: 'openafs-client-RedHat-init',
-        systemd_unit_template: 'openafs-client-RedHat-systemd-sysv.service',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
-        allow_unsupported_modules: false,
-      },
-    'OracleLinux-8-x86_64' =>
-      {
-        kernel: 'Linux',
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        service_provider: 'systemd',
-        init_script: '/etc/init.d/openafs-client',
-        systemd_script_template: 'openafs-client-RedHat-systemd-exec',
-        systemd_unit_template: 'openafs-client-RedHat-systemd-exec.service',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
-        allow_unsupported_modules: false,
-      },
-    'OracleLinux-9-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        service_provider: 'systemd',
-        init_script: '/etc/init.d/openafs-client',
-        systemd_script_template: 'openafs-client-RedHat-systemd-exec',
-        systemd_unit_template: 'openafs-client-RedHat-systemd-exec.service',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
-        allow_unsupported_modules: false,
-      },
-    'Scientific-5-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        init_script: '/etc/init.d/openafs-client',
-        init_template: 'openafs-client-RedHat-init',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i386'],
-        allow_unsupported_modules: false,
-      },
-    'Scientific-6-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        init_script: '/etc/init.d/openafs-client',
-        init_template: 'openafs-client-RedHat-init',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
-        allow_unsupported_modules: false,
-      },
-    'Scientific-7-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        init_script: '/etc/init.d/openafs-client',
-        init_template: 'openafs-client-RedHat-init',
-        systemd_unit_template: 'openafs-client-RedHat-systemd-sysv.service',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
-        allow_unsupported_modules: false,
-      },
-    'Scientific-8-x86_64' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: true,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        service_provider: 'systemd',
-        init_script: '/etc/init.d/openafs-client',
-        systemd_script_template: 'openafs-client-RedHat-systemd-exec',
-        systemd_unit_template: 'openafs-client-RedHat-systemd-exec.service',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-compat', 'openafs-krb5', 'dkms', 'dkms-openafs', 'glibc-devel', 'libgcc.i686'],
-        allow_unsupported_modules: false,
-      },
-    'SLES-11-x86_64' =>
+    'Suse-11-x86_64' =>
       {
         afs_config_path: '/etc/openafs',
         cache_path: '/var/cache/openafs',
@@ -239,7 +71,7 @@ def platforms
         package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit'],
         allow_unsupported_modules: false,
       },
-    'SLES-12-x86_64' =>
+    'Suse-12-x86_64' =>
       {
         afs_config_path: '/etc/openafs',
         cache_path: '/var/cache/openafs',
@@ -251,42 +83,7 @@ def platforms
         package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit'],
         allow_unsupported_modules: true,
       },
-    'SLES-15-x86_64' =>
-      {
-        afs_config_path: '/etc/openafs',
-        cache_path: '/var/cache/openafs',
-        config_client_dkms: false,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        init_script: '/etc/init.d/openafs-client',
-        systemd_script_template: 'openafs-client-Suse-systemd-exec',
-        systemd_unit_template: 'openafs-client-Suse-systemd-exec.service',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit'],
-        allow_unsupported_modules: true,
-      },
-    'SLED-11-x86_64' =>
-      {
-        afs_config_path: '/etc/openafs',
-        cache_path: '/var/cache/openafs',
-        config_client_dkms: false,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        init_script: '/etc/init.d/openafs-client',
-        init_template: 'openafs-client-Suse-init',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit'],
-        allow_unsupported_modules: false,
-      },
-    'SLED-12-x86_64' =>
-      {
-        afs_config_path: '/etc/openafs',
-        cache_path: '/var/cache/openafs',
-        config_client_dkms: false,
-        config_client_path: '/etc/sysconfig/openafs-client',
-        init_script: '/etc/init.d/openafs-client',
-        init_template: 'openafs-client-Suse-init',
-        systemd_unit_template: 'openafs-client-Suse-systemd-sysv.service',
-        package_name: ['openafs', 'openafs-client', 'openafs-docs', 'openafs-kernel-source', 'openafs-krb5-mit'],
-        allow_unsupported_modules: true,
-      },
-    'SLED-15-x86_64' =>
+    'Suse-15-x86_64' =>
       {
         afs_config_path: '/etc/openafs',
         cache_path: '/var/cache/openafs',
