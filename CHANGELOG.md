@@ -1,5 +1,32 @@
 # Changelog
 
+## [v2.3.0](https://github.com/kodguru/puppet-module-afs/tree/v2.3.0) (2022-02-25)
+
+[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v2.2.0...v2.3.0)
+
+**Merged pull requests:**
+
+- Update PDK to 2.3.0 [\#115](https://github.com/kodguru/puppet-module-afs/pull/115) ([anders-larsson](https://github.com/anders-larsson))
+- Improve init\/hybrid\/systemd list in README [\#114](https://github.com/kodguru/puppet-module-afs/pull/114) ([anders-larsson](https://github.com/anders-larsson))
+- Support Puppet versions \< 8.0.0 [\#113](https://github.com/kodguru/puppet-module-afs/pull/113) ([anders-larsson](https://github.com/anders-larsson))
+- Add REFERENCE [\#112](https://github.com/kodguru/puppet-module-afs/pull/112) ([anders-larsson](https://github.com/anders-larsson))
+- Simplify spec test data lookups [\#111](https://github.com/kodguru/puppet-module-afs/pull/111) ([anders-larsson](https://github.com/anders-larsson))
+- Support EL9 [\#110](https://github.com/kodguru/puppet-module-afs/pull/110) ([anders-larsson](https://github.com/anders-larsson))
+- Set minimum code coverage to 100% [\#109](https://github.com/kodguru/puppet-module-afs/pull/109) ([anders-larsson](https://github.com/anders-larsson))
+- Use rspec-puppet-facts and rewrite spec tests [\#108](https://github.com/kodguru/puppet-module-afs/pull/108) ([anders-larsson](https://github.com/anders-larsson))
+- Update PDK to 2.2.0 [\#107](https://github.com/kodguru/puppet-module-afs/pull/107) ([anders-larsson](https://github.com/anders-larsson))
+- Only test Puppet 7 in Github Actions [\#106](https://github.com/kodguru/puppet-module-afs/pull/106) ([Phil-Friderici](https://github.com/Phil-Friderici))
+- Start using Github Actions for validating and unit tests [\#105](https://github.com/kodguru/puppet-module-afs/pull/105) ([Phil-Friderici](https://github.com/Phil-Friderici))
+- Update PDK to 2.1.1 [\#103](https://github.com/kodguru/puppet-module-afs/pull/103) ([Phil-Friderici](https://github.com/Phil-Friderici))
+
+## [v1.7.3](https://github.com/kodguru/puppet-module-afs/tree/v1.7.3) (2021-03-10)
+
+[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v1.7.2...v1.7.3)
+
+**Merged pull requests:**
+
+- Handle required module packages in Suse scripts [\#100](https://github.com/kodguru/puppet-module-afs/pull/100) ([anders-larsson](https://github.com/anders-larsson))
+
 ## [v2.2.0](https://github.com/kodguru/puppet-module-afs/tree/v2.2.0) (2021-03-10)
 
 [Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v2.1.0...v2.2.0)
@@ -20,7 +47,7 @@
 
 ## [v2.0.1](https://github.com/kodguru/puppet-module-afs/tree/v2.0.1) (2020-07-01)
 
-[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v2.0.0...v2.0.1)
+[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v1.7.2...v2.0.1)
 
 **Merged pull requests:**
 
@@ -32,18 +59,9 @@
 
 [Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v1.7.1...v1.7.2)
 
-**Merged pull requests:**
-
-- Update startup scripts for RHEL - Improve handling of missing module dependencies for running kernel [\#94](https://github.com/kodguru/puppet-module-afs/pull/94) ([eralbru](https://github.com/eralbru))
-- Improvement in RedHat startup-scripts: Adding DKMS check routine to fix \(original module exists\) [\#92](https://github.com/kodguru/puppet-module-afs/pull/92) ([eralbru](https://github.com/eralbru))
-
 ## [v1.7.1](https://github.com/kodguru/puppet-module-afs/tree/v1.7.1) (2020-03-02)
 
 [Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v2.0.0...v1.7.1)
-
-**Merged pull requests:**
-
-- Remove legacy -nosettime option from SySV startup-scripts \(v1 branch\) [\#89](https://github.com/kodguru/puppet-module-afs/pull/89) ([anders-larsson](https://github.com/anders-larsson))
 
 ## [v2.0.0](https://github.com/kodguru/puppet-module-afs/tree/v2.0.0) (2020-03-02)
 
