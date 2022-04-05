@@ -1,13 +1,21 @@
 # Changelog
 
+## [v2.3.1](https://github.com/kodguru/puppet-module-afs/tree/v2.3.1) (2022-04-05)
+
+[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v2.3.0...v2.3.1)
+
+**Merged pull requests:**
+
+- Fix common.yaml [\#116](https://github.com/kodguru/puppet-module-afs/pull/116) ([Phil-Friderici](https://github.com/Phil-Friderici))
+
 ## [v2.3.0](https://github.com/kodguru/puppet-module-afs/tree/v2.3.0) (2022-02-25)
 
-[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v2.2.0...v2.3.0)
+[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v1.7.3...v2.3.0)
 
 **Merged pull requests:**
 
 - Update PDK to 2.3.0 [\#115](https://github.com/kodguru/puppet-module-afs/pull/115) ([anders-larsson](https://github.com/anders-larsson))
-- Improve init\/hybrid\/systemd list in README [\#114](https://github.com/kodguru/puppet-module-afs/pull/114) ([anders-larsson](https://github.com/anders-larsson))
+- Improve init/hybrid/systemd list in README [\#114](https://github.com/kodguru/puppet-module-afs/pull/114) ([anders-larsson](https://github.com/anders-larsson))
 - Support Puppet versions \< 8.0.0 [\#113](https://github.com/kodguru/puppet-module-afs/pull/113) ([anders-larsson](https://github.com/anders-larsson))
 - Add REFERENCE [\#112](https://github.com/kodguru/puppet-module-afs/pull/112) ([anders-larsson](https://github.com/anders-larsson))
 - Simplify spec test data lookups [\#111](https://github.com/kodguru/puppet-module-afs/pull/111) ([anders-larsson](https://github.com/anders-larsson))
@@ -21,11 +29,7 @@
 
 ## [v1.7.3](https://github.com/kodguru/puppet-module-afs/tree/v1.7.3) (2021-03-10)
 
-[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v1.7.2...v1.7.3)
-
-**Merged pull requests:**
-
-- Handle required module packages in Suse scripts [\#100](https://github.com/kodguru/puppet-module-afs/pull/100) ([anders-larsson](https://github.com/anders-larsson))
+[Full Changelog](https://github.com/kodguru/puppet-module-afs/compare/v2.2.0...v1.7.3)
 
 ## [v2.2.0](https://github.com/kodguru/puppet-module-afs/tree/v2.2.0) (2021-03-10)
 
