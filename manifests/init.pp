@@ -124,15 +124,13 @@ class afs (
   Optional[String]          $afs_cell                           = undef,
   Stdlib::Unixpath          $afs_config_path                    = undef,
   Optional[String]          $afs_cron_job_content               = undef,
-  Optional[Enum['hourly', 'daily', 'weekly', 'monthly', 'specific']]
-                            $afs_cron_job_interval              = undef,
-  Optional[Integer[0, 59]]  $afs_cron_job_minute                = 42,
+  Optional[Enum['hourly', 'daily', 'weekly', 'monthly', 'specific']] $afs_cron_job_interval = undef,
+  Integer[0, 59]            $afs_cron_job_minute                = 42,
   Optional[Integer[0, 23]]  $afs_cron_job_hour                  = undef,
   Optional[Integer[1, 31]]  $afs_cron_job_monthday              = undef,
   Optional[Integer[1, 12]]  $afs_cron_job_month                 = undef,
   Optional[Integer[0, 7]]   $afs_cron_job_weekday               = undef,
-  Variant[Array[String], String]
-                            $afs_suidcells                      = [],
+  Variant[Array[String], String] $afs_suidcells                 = [],
   Stdlib::Unixpath          $cache_path                         = undef,
   Integer                   $cache_size                         = 1000000,
   String                    $config_client_args                 = '-dynroot -afsdb -daemons 6 -volumes 1000',
@@ -141,19 +139,17 @@ class afs (
   Stdlib::Unixpath          $config_client_path                 = undef,
   Boolean                   $config_client_update               = false,
   Boolean                   $create_symlinks                    = false,
-  Optional[Hash]            $links                              = {},
+  Hash                      $links                              = {},
   Stdlib::Unixpath          $init_script                        = '/etc/init.d/openafs-client',
   Optional[String]          $init_template                      = undef,
   Optional[String]          $systemd_script_template            = undef,
   Optional[String]          $systemd_unit_template              = undef,
   Optional[String]          $package_adminfile                  = undef,
-  Variant[Array[String], String]
-                            $package_name                       = undef,
+  Variant[Array[String], String] $package_name                  = undef,
   Optional[String]          $package_provider                   = undef,
   Optional[String]          $package_source                     = undef,
   Optional[String]          $service_provider                   = undef,
 ) {
-
   $afs_suidcells_array = any2array($afs_suidcells)
   $config_client_dir = dirname($config_client_path)
 
@@ -271,7 +267,7 @@ class afs (
       path   => '/etc/modprobe.d/10-unsupported-modules.conf',
       line   => 'allow_unsupported_modules 1',
       match  => '^allow_unsupported_modules 0$',
-      before => Service[afs_openafs_client_service],
+      before => 'Service[afs_openafs_client_service]',
     }
   }
 
@@ -366,7 +362,6 @@ class afs (
 
   # Solaris containers must not start the service nor add setserverprefs cronjob.
   if $solaris_container == false {
-
     # THIS SERVICE SHOULD NOT BE RESTARTED
     # Restarting it may cause AFS module and kernel problems.
     service { 'afs_openafs_client_service':
@@ -409,7 +404,6 @@ class afs (
   }
 
   if $create_symlinks == true {
-
     $afs_create_link_defaults = {
       'ensure' => 'link',
       'owner'  => 'root',
@@ -418,7 +412,5 @@ class afs (
     }
 
     create_resources(file, $links, $afs_create_link_defaults)
-
   }
-
 }
