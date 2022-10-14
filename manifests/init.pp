@@ -262,6 +262,19 @@ class afs (
   }
 
   if ($facts['os']['family'] == 'Suse' and $facts['os']['release']['major'] =~ /12|15/) {
+    # Since Suse 15.4 the file /etc/modprobe.d/10-unsupported-modules.conf isn't created automatically anymore.
+    # So we need to create that file ourself. An alternative approach could be to use the kmod module.
+    if versioncmp($facts['os']['release']['full'], '15.3') == 1 { # Suse version is greater than 15.3
+      file { '/etc/modprobe.d/10-unsupported-modules.conf' :
+        ensure => 'file',
+        path   => '/etc/modprobe.d/10-unsupported-modules.conf',
+        owner  => 'root',
+        group  => 'root',
+        mode   => '0644',
+        before => 'File_line[allow_unsupported_modules]',
+      }
+    }
+
     file_line { 'allow_unsupported_modules':
       ensure => 'present',
       path   => '/etc/modprobe.d/10-unsupported-modules.conf',
