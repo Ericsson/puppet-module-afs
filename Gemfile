@@ -46,9 +46,6 @@ group :release_prep do
   gem "puppet-strings", '~> 4.0',         require: false
   gem "puppetlabs_spec_helper", '~> 6.0', require: false
 end
-group :test do
-  gem "puppet_metadata", '~> 1.9.0', require: false
-end
 
 puppet_version = ENV['PUPPET_GEM_VERSION']
 facter_version = ENV['FACTER_GEM_VERSION']
