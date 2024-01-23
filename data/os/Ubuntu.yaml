@@ -1,8 +1,5 @@
 ---
 
-afs::init_script: /etc/init.d/openafs-client
-afs::init_template: openafs-client-Ubuntu-init
-
 afs::afs_config_path: /etc/openafs
 afs::cache_path: /var/cache/openafs
 afs::config_client_dkms: true

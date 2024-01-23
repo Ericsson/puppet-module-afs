@@ -89,36 +89,10 @@ afs::afs_cron_job_minute:   '42'
 
 afs::package_adminfile:     '/path/to/adminfile/noask'
 afs::package_source:        '/path/to/package/openafs-x.x.x-x-Sol10'
-afs::service_provider:      'init'
 ```
 
 On Solaris containers, this module will not start the OpenAFS service and the
 cronjob will not be created. Packages are still installed for the included tools.
-
-#### Service management
-
-There are three different modes the module can handle services. The supported
-operating systems has been configured according to the list below:
-```
-init:
-  <= EL6
-  <= Suse 11
-  Ubuntu
-  Solaris
-hybrid:
-  Suse 12
-  EL7
-systemd:
-  All versions not specified under `init` or `hybrid`.
-```
-
-Hybrid will use systemd to execute the init-script which will start the service.
-
-For non-supported operating systems you'll have to choose which setup you want
-to use.
-Setting `init_template` will make make it use `init` method, setting both `init`
-and `systemd` it will use hybrid and finally with `systemd_script_template` which
-will use systemd.
 
 ## Limitations
 
