@@ -89,17 +89,8 @@
 # @param links
 #   Hash of path and target to create symlinks from if $create_links is true.
 #
-# @param package_adminfile
-#   Solaris specific: string with adminfile.
-#
 # @param package_name
 #   Array or string of needed OpenAFS packages.
-#
-# @param package_provider
-#   Solaris specific: string with package source.
-#
-# @param package_source
-#   Solaris specific: string with package source.
 #
 # @param service_provider
 #   String of which service provider should be used
@@ -125,21 +116,11 @@ class afs (
   Boolean                   $config_client_update               = false,
   Boolean                   $create_symlinks                    = false,
   Hash                      $links                              = {},
-  Optional[String]          $package_adminfile                  = undef,
   Variant[Array[String], String] $package_name                  = undef,
-  Optional[String]          $package_provider                   = undef,
-  Optional[String]          $package_source                     = undef,
   Optional[String]          $service_provider                   = undef,
 ) {
   $afs_suidcells_array = any2array($afs_suidcells)
   $config_client_dir = dirname($config_client_path)
-
-  if $facts['os']['family'] == 'Solaris' and $facts['is_virtual'] == true and $facts['virtual'] == 'zone' {
-    $solaris_container = true
-  }
-  else {
-    $solaris_container = false
-  }
 
   # TODO: Replace with Stdlib::Fqdn
   afs::validate_domain_names { $afs_suidcells_array: }
@@ -153,24 +134,6 @@ class afs (
     File[afs_config_client],
   ]
 
-  if $package_adminfile != undef {
-    Package {
-      adminfile => $package_adminfile,
-    }
-  }
-
-  if $package_provider != undef {
-    Package {
-      provider => $package_provider,
-    }
-  }
-
-  if $package_source != undef {
-    Package {
-      source => $package_source,
-    }
-  }
-
   package { $package_name:
     ensure => installed,
     before => $package_before,
@@ -179,10 +142,8 @@ class afs (
   common::mkdir_p { $afs_config_path: }
   common::mkdir_p { $config_client_dir: }
 
-  if $solaris_container == false {
-    File {
-      before => Service[afs_openafs_client_service],
-    }
+  File {
+    before => Service[afs_openafs_client_service],
   }
 
   if ($facts['os']['family'] == 'Suse' and $facts['os']['release']['major'] =~ /12|15/) {
@@ -270,43 +231,40 @@ class afs (
     }
   }
 
-  # Solaris containers must not start the service nor add setserverprefs cronjob.
-  if $solaris_container == false {
-    # THIS SERVICE SHOULD NOT BE RESTARTED
-    # Restarting it may cause AFS module and kernel problems.
-    service { 'afs_openafs_client_service':
-      ensure     => 'running',
-      enable     => true,
-      name       => 'openafs-client',
-      hasstatus  => false,
-      hasrestart => false,
-      restart    => '/bin/true',
-      status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
-      require    => $service_require,
-    }
+  # THIS SERVICE SHOULD NOT BE RESTARTED
+  # Restarting it may cause AFS module and kernel problems.
+  service { 'afs_openafs_client_service':
+    ensure     => 'running',
+    enable     => true,
+    name       => 'openafs-client',
+    hasstatus  => false,
+    hasrestart => false,
+    restart    => '/bin/true',
+    status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
+    require    => $service_require,
+  }
 
-    if ($afs_cron_job_content != undef) and ($afs_cron_job_interval != undef) {
-      if $afs_cron_job_interval == 'specific' {
-        cron { 'afs_cron_job':
-          ensure   => present,
-          command  => $afs_cron_job_content,
-          user     => 'root',
-          minute   => $afs_cron_job_minute,
-          hour     => $afs_cron_job_hour,
-          month    => $afs_cron_job_month,
-          weekday  => $afs_cron_job_weekday,
-          monthday => $afs_cron_job_monthday,
-        }
+  if ($afs_cron_job_content != undef) and ($afs_cron_job_interval != undef) {
+    if $afs_cron_job_interval == 'specific' {
+      cron { 'afs_cron_job':
+        ensure   => present,
+        command  => $afs_cron_job_content,
+        user     => 'root',
+        minute   => $afs_cron_job_minute,
+        hour     => $afs_cron_job_hour,
+        month    => $afs_cron_job_month,
+        weekday  => $afs_cron_job_weekday,
+        monthday => $afs_cron_job_monthday,
       }
-      else {
-        file { 'afs_cron_job' :
-          ensure  => file,
-          path    => "/etc/cron.${afs_cron_job_interval}/afs_cron_job",
-          owner   => 'root',
-          group   => 'root',
-          mode    => '0755',
-          content => $afs_cron_job_content,
-        }
+    }
+    else {
+      file { 'afs_cron_job' :
+        ensure  => file,
+        path    => "/etc/cron.${afs_cron_job_interval}/afs_cron_job",
+        owner   => 'root',
+        group   => 'root',
+        mode    => '0755',
+        content => $afs_cron_job_content,
       }
     }
   }

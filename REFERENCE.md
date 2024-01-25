@@ -50,10 +50,7 @@ The following parameters are available in the `afs` class:
 * [`config_client_update`](#-afs--config_client_update)
 * [`create_symlinks`](#-afs--create_symlinks)
 * [`links`](#-afs--links)
-* [`package_adminfile`](#-afs--package_adminfile)
 * [`package_name`](#-afs--package_name)
-* [`package_provider`](#-afs--package_provider)
-* [`package_source`](#-afs--package_source)
 * [`service_provider`](#-afs--service_provider)
 
 ##### <a name="-afs--afs_cellserverdb"></a>`afs_cellserverdb`
@@ -240,35 +237,11 @@ Hash of path and target to create symlinks from if $create_links is true.
 
 Default value: `{}`
 
-##### <a name="-afs--package_adminfile"></a>`package_adminfile`
-
-Data type: `Optional[String]`
-
-Solaris specific: string with adminfile.
-
-Default value: `undef`
-
 ##### <a name="-afs--package_name"></a>`package_name`
 
 Data type: `Variant[Array[String], String]`
 
 Array or string of needed OpenAFS packages.
-
-Default value: `undef`
-
-##### <a name="-afs--package_provider"></a>`package_provider`
-
-Data type: `Optional[String]`
-
-Solaris specific: string with package source.
-
-Default value: `undef`
-
-##### <a name="-afs--package_source"></a>`package_source`
-
-Data type: `Optional[String]`
-
-Solaris specific: string with package source.
 
 Default value: `undef`
 

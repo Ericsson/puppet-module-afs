@@ -117,14 +117,5 @@ def platforms
         package_name: ['openafs-modules-dkms', 'openafs-modules-source', 'openafs-client', 'openafs-doc', 'openafs-krb5', 'dkms'],
         allow_unsupported_modules: false,
       },
-    'Solaris-10-i86pc' =>
-      {
-        afs_config_path: '/usr/vice/etc',
-        cache_path: '/usr/vice/cache',
-        config_client_dkms: false,
-        config_client_path: '/usr/vice/etc/sysconfig/openafs-client',
-        package_name: ['EISopenafs'],
-        allow_unsupported_modules: false,
-      },
   }
 end

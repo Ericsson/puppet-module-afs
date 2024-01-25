@@ -1,8 +1,0 @@
----
-
-afs::afs_config_path: /usr/vice/etc
-afs::cache_path: /usr/vice/cache
-afs::config_client_dkms: false
-afs::config_client_path: /usr/vice/etc/sysconfig/openafs-client
-afs::package_name:
-  - EISopenafs
