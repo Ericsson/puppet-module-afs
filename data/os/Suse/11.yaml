@@ -1,4 +1,0 @@
----
-
-afs::init_script: /etc/init.d/openafs-client
-afs::init_template: openafs-client-Suse-init

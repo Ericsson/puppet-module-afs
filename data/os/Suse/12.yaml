@@ -1,5 +1,0 @@
----
-
-afs::init_script: /etc/init.d/openafs-client
-afs::init_template: openafs-client-Suse-init
-afs::systemd_unit_template: openafs-client-Suse-systemd-sysv.service

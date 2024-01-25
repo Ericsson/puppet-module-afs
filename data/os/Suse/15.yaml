@@ -1,4 +1,0 @@
----
-
-afs::systemd_unit_template: openafs-client-Suse-systemd-exec.service
-afs::systemd_script_template: openafs-client-Suse-systemd-exec

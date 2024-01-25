@@ -1,6 +1,4 @@
 ---
-afs::init_script: /etc/init.d/openafs-client
-afs::init_template: openafs-client-RedHat-init
 afs::package_name:
   - openafs
   - openafs-client

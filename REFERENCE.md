@@ -49,10 +49,6 @@ The following parameters are available in the `afs` class:
 * [`config_client_path`](#-afs--config_client_path)
 * [`config_client_update`](#-afs--config_client_update)
 * [`create_symlinks`](#-afs--create_symlinks)
-* [`init_script`](#-afs--init_script)
-* [`init_template`](#-afs--init_template)
-* [`systemd_script_template`](#-afs--systemd_script_template)
-* [`systemd_unit_template`](#-afs--systemd_unit_template)
 * [`links`](#-afs--links)
 * [`package_adminfile`](#-afs--package_adminfile)
 * [`package_name`](#-afs--package_name)
@@ -197,7 +193,7 @@ Default value: `'-dynroot -afsdb -daemons 6 -volumes 1000'`
 Data type: `Boolean`
 
 Boolean trigger for the cleaning of the client cache on start.
-If set to true, the provided init script will clean the client cache when starting the service.
+If set to true, client cache will be cleaned when starting the service.
 Please check openafs-client config file for supported OS families.
 
 Default value: `false`
@@ -223,8 +219,8 @@ Default value: `undef`
 
 Data type: `Boolean`
 
-Boolean trigger for the selfupdating routine in the init script.
-If set to true, the init skript checks for updated AFS packages in the available repositories and installs them.
+Boolean trigger for the selfupdating routine in the start script.
+If set to true, checks for updated AFS packages in the available repositories and installs them.
 
 Default value: `false`
 
@@ -235,41 +231,6 @@ Data type: `Boolean`
 Create symlinks for convenient access to AFS structure. Path and target are taken from hash in $links.
 
 Default value: `false`
-
-##### <a name="-afs--init_script"></a>`init_script`
-
-Data type: `Stdlib::Unixpath`
-
-Filename for the init script.
-
-Default value: `'/etc/init.d/openafs-client'`
-
-##### <a name="-afs--init_template"></a>`init_template`
-
-Data type: `Optional[String]`
-
-Name of the template file to be used for $init_script.
-Installs init-script if specified.
-
-Default value: `undef`
-
-##### <a name="-afs--systemd_script_template"></a>`systemd_script_template`
-
-Data type: `Optional[String]`
-
-Name of the template file to be used as startup script for systemd.
-Installs systemd script if specified.
-
-Default value: `undef`
-
-##### <a name="-afs--systemd_unit_template"></a>`systemd_unit_template`
-
-Data type: `Optional[String]`
-
-Name of the template file to be used as unit file for systemd.
-Installs systemd unit file if specified.
-
-Default value: `undef`
 
 ##### <a name="-afs--links"></a>`links`
 

@@ -7,69 +7,14 @@ describe 'afs' do
                 platforms["#{os_facts[:os]['name']}-#{os_facts[:os]['release']['major']}-#{os_facts[:os]['architecture']}"]
               end
 
-    # Hybrid installation with both init script and systemd unit
-    if !os_data[:init_template].nil? && !os_data[:systemd_unit_template].nil?
-      init_script_ensure = 'file'
-      systemd_script_ensure = 'absent'
-      systemd_unit_ensure = 'file'
-
-      package_before = [
-        'File[afs_init_script]',
-        'File[afs_systemd_unit]',
-        'File[afs_config_cacheinfo]',
-        'File[afs_config_client]',
-      ]
-      service_require = [
-        'File[afs_init_script]',
-        'File[afs_systemd_unit]',
-        'File[afs_config_cacheinfo]',
-        'File[afs_config_client]',
-      ]
-      cron_require = [
-        'File[afs_init_script]',
-        'File[afs_systemd_script]',
-      ]
-    # init script installation
-    elsif !os_data[:init_template].nil?
-      init_script_ensure = 'file'
-      systemd_script_ensure = 'absent'
-      systemd_unit_ensure = 'absent'
-
-      package_before = [
-        'File[afs_init_script]',
-        'File[afs_config_cacheinfo]',
-        'File[afs_config_client]',
-      ]
-      service_require = [
-        'File[afs_init_script]',
-        'File[afs_config_cacheinfo]',
-        'File[afs_config_client]',
-      ]
-      cron_require = [
-        'File[afs_init_script]',
-      ]
-    # systemd installation
-    elsif !os_data[:systemd_unit_template].nil?
-      init_script_ensure = 'absent'
-      systemd_script_ensure = 'file'
-      systemd_unit_ensure = 'file'
-
-      package_before = [
-        'File[afs_systemd_script]',
-        'File[afs_systemd_unit]',
-        'File[afs_config_cacheinfo]',
-        'File[afs_config_client]',
-      ]
-      service_require = [
-        'File[afs_systemd_script]',
-        'File[afs_systemd_unit]',
-        'File[afs_config_cacheinfo]',
-        'File[afs_config_client]',
-      ]
-      cron_require = [
-        'File[afs_systemd_script]',
-      ]
-    end
+    package_before = [
+      'File[afs_config_cacheinfo]',
+      'File[afs_config_client]',
+    ]
+    service_require = [
+      'File[afs_config_cacheinfo]',
+      'File[afs_config_client]',
+    ]
 
     context "on #{os}" do
       describe 'with default values for parameters' do
@@ -93,43 +38,6 @@ describe 'afs' do
 
         it {
           is_expected.to contain_common__mkdir_p(File.dirname(os_data[:config_client_path]))
-        }
-
-        # file { 'afs_init_script' :}
-        it {
-          is_expected.to contain_file('afs_init_script').with(
-            'ensure' => init_script_ensure,
-            'path'   => os_data[:init_script],
-            'owner'  => 'root',
-            'group'  => 'root',
-            'mode'   => '0755',
-            'source' => "puppet:///modules/afs/#{os_data[:init_template]}",
-            'before' => 'Service[afs_openafs_client_service]',
-          )
-        }
-
-        # file { 'afs_systemd_unit': }
-        it {
-          is_expected.to contain_file('afs_systemd_script').with(
-            'ensure' => systemd_script_ensure,
-            'path'   => "#{os_data[:afs_config_path]}/systemd-exec.openafs-client",
-            'owner'  => 'root',
-            'group'  => 'root',
-            'mode'   => '0755',
-            'source' => "puppet:///modules/afs/#{os_data[:systemd_script_template]}",
-            'before' => 'Service[afs_openafs_client_service]',
-          )
-        }
-        it {
-          is_expected.to contain_file('afs_systemd_unit').with(
-            'ensure' => systemd_unit_ensure,
-            'path'   => '/usr/lib/systemd/system/openafs-client.service',
-            'owner'  => 'root',
-            'group'  => 'root',
-            'mode'   => '0644',
-            'source' => "puppet:///modules/afs/#{os_data[:systemd_unit_template]}",
-            'before' => 'Service[afs_openafs_client_service]',
-          )
         }
 
         # file { 'afs_config_cacheinfo' :}
@@ -325,7 +233,6 @@ describe 'afs' do
                 'group'   => 'root',
                 'mode'    => '0755',
                 'content' => '#!/bin/sh\\n/sw/RedHat/afs_setserverprefs.sh',
-                'require' => cron_require,
               )
             }
           end
@@ -354,7 +261,6 @@ describe 'afs' do
               'month'    => '2',
               'weekday'  => '4',
               'monthday' => '2',
-              'require' => cron_require,
             )
           }
         end
@@ -427,7 +333,6 @@ describe 'afs' do
           }
         end
 
-        it { is_expected.to contain_file('afs_init_script').with_before(nil) }
         it { is_expected.to contain_file('afs_config_cacheinfo').with_before(nil) }
         it { is_expected.to contain_file('afs_config_client').with_before(nil) }
         it { is_expected.to contain_file('afs_config_suidcells').with_before(nil) }
@@ -445,7 +350,6 @@ describe 'afs' do
             package_adminfile: '/sw/Solaris/Sparc/noask',
             package_provider: 'sun',
             package_source: '/sw/Solaris/Sparc/EISopenafs',
-            service_provider: 'init',
             package_name: ['EISopenafs']
           }
         end
@@ -465,13 +369,6 @@ describe 'afs' do
         context 'where source is </sw/Solaris/Sparc/EISopenafs>' do
           it {
             is_expected.to contain_package('EISopenafs').with('source'    => '/sw/Solaris/Sparc/EISopenafs')
-          }
-        end
-
-        context 'where service_provider is <init>' do
-          # service { 'afs_openafs_client_service':}
-          it {
-            is_expected.to contain_service('afs_openafs_client_service').with('provider' => 'init')
           }
         end
       end
