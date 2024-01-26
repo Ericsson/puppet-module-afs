@@ -117,5 +117,14 @@ def platforms
         package_name: ['openafs-modules-dkms', 'openafs-modules-source', 'openafs-client', 'openafs-doc', 'openafs-krb5', 'dkms'],
         allow_unsupported_modules: false,
       },
+    'Ubuntu-22.04-amd64' =>
+      {
+        afs_config_path: '/etc/openafs',
+        cache_path: '/var/cache/openafs',
+        config_client_dkms: true,
+        config_client_path: '/etc/default/openafs-client',
+        package_name: ['openafs-modules-dkms', 'openafs-modules-source', 'openafs-client', 'openafs-doc', 'openafs-krb5', 'dkms'],
+        allow_unsupported_modules: false,
+      },
   }
 end
