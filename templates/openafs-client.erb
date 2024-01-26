@@ -13,15 +13,12 @@
 
 #
 # Disk-cache options
-# Size of disk-cache is configured in file (RHEL + Solaris) /usr/vice/etc/cacheinfo or (SLE + Ubuntu) /etc/openafs/cacheinfo
+# Size of disk-cache is configured in file (RHEL /usr/vice/etc/cacheinfo or (SLE + Ubuntu) /etc/openafs/cacheinfo
 # Size should not be bigger than 20% of machine's memory, so that it can fit in filesystem-caching by OS.
 # It is recommended for the disk cache to be on its own dedicated partition, to guarantee that the disk does not fill up.
-# On Solaris, ZFS in some scenarios does not perform well for cache behavior, so instead create a zvol with UFS for the cache partition.
-# If the cache-directory (RHEL + Solaris) /usr/vice/cache or (SLE + Ubuntu) /var/cache/openafs is on a separate partition,
+# If the cache-directory (RHEL) /usr/vice/cache or (SLE + Ubuntu) /var/cache/openafs is on a separate partition,
 # the cache-size should not be bigger than 95% of the partition-size. The client will not start if cache-size is bigger!
 # Default value is 1GB, size should be monitored and then be adjusted. On Terminal-servers 3-4GB is a good starting point.
-# Due to a bug in OpenAFS<1.6.11 for Solaris11 and newer: Don't use ZFS for cache if openafs-version is older than 1.6.11.
-# Systems using UFS are not affected (even if the UFS filesystem is on a ZFS zvol)
 # AFSD_ARGS="-dynroot -afsdb -daemons 6 -volumes 1000"
 AFSD_ARGS="<%= @config_client_args %>"
 
@@ -44,7 +41,6 @@ UPDATE="<%= @config_client_update %>"
 #
 # This section is to control the AFS kernel module handling via DKMS or the openafs start-script.
 # At the moment only available on RHEL and Ubuntu platform. On SLE <= 11 no stable DKMS available.
-# It will be ignored on other platforms like Solaris.
 # The package openafs-kernel-source/(Ubuntu: openafs-modules-source) is needed for the compile start-script method.
 # For dkms the following packages are needed: dkms dkms-openafs
 # For both options packages to build kernel-modules are needed.

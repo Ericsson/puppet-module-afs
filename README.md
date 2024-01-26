@@ -72,28 +72,6 @@ This would create the following symlinks:
 /etc/home -> /env/site/profiles/home
 ```
 
-#### Solaris specific
-
-For usage on Solaris, you will need to define these variables:
-
-$package_adminfile, $package_source and $service_provider
-
-If you want to create a cron job, please set $afs_cron_job_interval to
-'specific' and choose your values for $afs_cron_job_hour and $afs_cron_job_minute.
-
-```yaml
-afs::afs_cron_job_interval: 'specific'
-afs::afs_cron_job_content:  '[ -x /afs_maintenance.sh ] && /afs_maintenance.sh'
-afs::afs_cron_job_hour:     '2'
-afs::afs_cron_job_minute:   '42'
-
-afs::package_adminfile:     '/path/to/adminfile/noask'
-afs::package_source:        '/path/to/package/openafs-x.x.x-x-Sol10'
-```
-
-On Solaris containers, this module will not start the OpenAFS service and the
-cronjob will not be created. Packages are still installed for the included tools.
-
 ## Limitations
 
 This module has been tested to work on the following systems with Puppet
@@ -106,7 +84,6 @@ This module aims to support the current and previous major Puppet versions.
  * EL 7
  * EL 8
  * EL 9
- * Solaris 10
  * Suse 10
  * Suse 11
  * Suse 12
