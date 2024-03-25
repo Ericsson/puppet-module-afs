@@ -1,12 +1,12 @@
 {
-  "name": "kodguru-afs",
+  "name": "ericsson-afs",
   "version": "3.0.0",
-  "author": "kodguru",
+  "author": "ericsson",
   "summary": "Manage OpenAFS",
   "license": "Apache-2.0",
-  "source": "git@github.com:kodguru/puppet-module-afs.git",
-  "project_page": "https://github.com/kodguru/puppet-module-afs",
-  "issues_url": "https://github.com/kodguru/puppet-module-afs/issues",
+  "source": "git@github.com:ericsson/puppet-module-afs.git",
+  "project_page": "https://github.com/ericsson/puppet-module-afs",
+  "issues_url": "https://github.com/ericsson/puppet-module-afs/issues",
   "dependencies": [
     {
       "name": "ghoneycutt/common",
