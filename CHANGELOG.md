@@ -1,5 +1,14 @@
 # Changelog
 
+## [v3.1.0](https://github.com/Ericsson/puppet-module-afs/tree/v3.1.0) (2025-02-07)
+
+[Full Changelog](https://github.com/Ericsson/puppet-module-afs/compare/v3.0.0...v3.1.0)
+
+**Merged pull requests:**
+
+- Add support for Ubuntu 24.04 [\#127](https://github.com/Ericsson/puppet-module-afs/pull/127) ([dsundq](https://github.com/dsundq))
+- Repository transferred to Ericsson org [\#126](https://github.com/Ericsson/puppet-module-afs/pull/126) ([anders-larsson](https://github.com/anders-larsson))
+
 ## [v3.0.0](https://github.com/Ericsson/puppet-module-afs/tree/v3.0.0) (2024-01-26)
 
 [Full Changelog](https://github.com/Ericsson/puppet-module-afs/compare/v2.3.3...v3.0.0)
