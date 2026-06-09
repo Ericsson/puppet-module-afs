@@ -129,6 +129,7 @@ class afs (
     File[afs_config_cacheinfo],
     File[afs_config_client],
   ]
+
   $service_require = [
     File[afs_config_cacheinfo],
     File[afs_config_client],
@@ -137,6 +138,23 @@ class afs (
   package { $package_name:
     ensure => installed,
     before => $package_before,
+  }
+
+  if $facts['os']['family'] == 'RedHat' and versioncmp($facts['os']['release']['major'], '10') >= 0 {
+    exec { 'afs_rhel10_uncompress_module':
+      command => "/usr/bin/unxz -kf /lib/modules/${facts['kernelrelease']}/extra/openafs/openafs.ko.xz",
+      path    => ['/usr/bin','/usr/sbin','/bin','/sbin'],
+      unless  => "/usr/bin/test -f /lib/modules/${facts['kernelrelease']}/extra/openafs/openafs.ko",
+    }
+
+    exec { 'afs_rhel10_load_module':
+      command     => "/usr/sbin/insmod /lib/modules/${facts['kernelrelease']}/extra/openafs/openafs.ko",
+      path        => ['/usr/bin','/usr/sbin','/bin','/sbin'],
+      unless      => '/usr/sbin/lsmod | /usr/bin/grep -q "^openafs"',
+      require     => Exec['afs_rhel10_uncompress_module'],
+      logoutput   => true,
+      refreshonly => false,
+    }
   }
 
   common::mkdir_p { $afs_config_path: }
@@ -242,6 +260,11 @@ class afs (
     restart    => '/bin/true',
     status     => '/bin/ps -ef | /bin/grep -i "afsd" | /bin/grep -v "grep"',
     require    => $service_require,
+  }
+
+  if $facts['os']['family'] == 'RedHat' and versioncmp($facts['os']['release']['major'], '10') >= 0 {
+    Exec['afs_rhel10_load_module']
+    -> Service['afs_openafs_client_service']
   }
 
   if ($afs_cron_job_content != undef) and ($afs_cron_job_interval != undef) {

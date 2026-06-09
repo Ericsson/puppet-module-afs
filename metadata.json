@@ -1,104 +1,105 @@
 {
-  "name": "ericsson-afs",
-  "version": "3.1.0",
-  "author": "ericsson",
-  "summary": "Manage OpenAFS",
-  "license": "Apache-2.0",
-  "source": "git@github.com:ericsson/puppet-module-afs.git",
-  "project_page": "https://github.com/ericsson/puppet-module-afs",
-  "issues_url": "https://github.com/ericsson/puppet-module-afs/issues",
-  "dependencies": [
-    {
-      "name": "ghoneycutt/common",
-      "version_requirement": ">= 1.9.0 < 2.0.0"
-    },
-    {
-      "name": "puppetlabs/cron_core",
-      "version_requirement": ">= 1.0.0 < 2.0.0"
-    },
-    {
-      "name": "puppetlabs/stdlib",
-      "version_requirement": ">= 5.2.0 < 7.0.0"
-    }
-  ],
-  "operatingsystem_support": [
-    {
-      "operatingsystem": "RedHat",
-      "operatingsystemrelease": [
-        "5",
-        "6",
-        "7",
-        "8",
-        "9"
-      ]
-    },
-    {
-      "operatingsystem": "CentOS",
-      "operatingsystemrelease": [
-        "5",
-        "6",
-        "7",
-        "8",
-        "9"
-      ]
-    },
-    {
-      "operatingsystem": "OracleLinux",
-      "operatingsystemrelease": [
-        "5",
-        "6",
-        "7",
-        "8",
-        "9"
-      ]
-    },
-    {
-      "operatingsystem": "Scientific",
-      "operatingsystemrelease": [
-        "5",
-        "6",
-        "7",
-        "8"
-      ]
-    },
-    {
-      "operatingsystem": "SLES",
-      "operatingsystemrelease": [
-        "10",
-        "11",
-        "12",
-        "15"
-      ]
-    },
-    {
-      "operatingsystem": "SLED",
-      "operatingsystemrelease": [
-        "10",
-        "11",
-        "12",
-        "15"
-      ]
-    },
-    {
-      "operatingsystem": "Ubuntu",
-      "operatingsystemrelease": [
-        "12.04",
-        "14.04",
-        "16.04",
-        "18.04",
-        "20.04",
-        "22.04",
-        "24.04"
-      ]
-    }
-  ],
-  "requirements": [
-    {
-      "name": "puppet",
-      "version_requirement": ">= 6.0.0 < 9.0.0"
-    }
-  ],
-  "pdk-version": "3.3.0",
-  "template-url": "pdk-default#3.3.0",
-  "template-ref": "tags/3.3.0-0-g5d17ec1"
+    "name": "ericsson-afs",
+    "version": "3.1.0",
+    "author": "ericsson",
+    "summary": "Manage OpenAFS",
+    "license": "Apache-2.0",
+    "source": "git@github.com:ericsson/puppet-module-afs.git",
+    "project_page": "https://github.com/ericsson/puppet-module-afs",
+    "issues_url": "https://github.com/ericsson/puppet-module-afs/issues",
+    "dependencies": [
+        {
+            "name": "ghoneycutt/common",
+            "version_requirement": ">= 1.9.0 < 2.0.0"
+        },
+        {
+            "name": "puppetlabs/cron_core",
+            "version_requirement": ">= 1.0.0 < 2.0.0"
+        },
+        {
+            "name": "puppetlabs/stdlib",
+            "version_requirement": ">= 5.2.0 < 7.0.0"
+        }
+    ],
+    "operatingsystem_support": [
+        {
+            "operatingsystem": "RedHat",
+            "operatingsystemrelease": [
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10"
+            ]
+        },
+        {
+            "operatingsystem": "CentOS",
+            "operatingsystemrelease": [
+                "5",
+                "6",
+                "7",
+                "8",
+                "9"
+            ]
+        },
+        {
+            "operatingsystem": "OracleLinux",
+            "operatingsystemrelease": [
+                "5",
+                "6",
+                "7",
+                "8",
+                "9"
+            ]
+        },
+        {
+            "operatingsystem": "Scientific",
+            "operatingsystemrelease": [
+                "5",
+                "6",
+                "7",
+                "8"
+            ]
+        },
+        {
+            "operatingsystem": "SLES",
+            "operatingsystemrelease": [
+                "10",
+                "11",
+                "12",
+                "15"
+            ]
+        },
+        {
+            "operatingsystem": "SLED",
+            "operatingsystemrelease": [
+                "10",
+                "11",
+                "12",
+                "15"
+            ]
+        },
+        {
+            "operatingsystem": "Ubuntu",
+            "operatingsystemrelease": [
+                "12.04",
+                "14.04",
+                "16.04",
+                "18.04",
+                "20.04",
+                "22.04",
+                "24.04"
+            ]
+        }
+    ],
+    "requirements": [
+        {
+            "name": "puppet",
+            "version_requirement": ">= 6.0.0 < 9.0.0"
+        }
+    ],
+    "pdk-version": "3.3.0",
+    "template-url": "pdk-default#3.3.0",
+    "template-ref": "tags/3.3.0-0-g5d17ec1"
 }
