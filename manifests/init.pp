@@ -5,6 +5,13 @@
 # @example Declaring the class
 #   include ::afs
 #
+# DKMS:
+#   Builds the module if it does not exist.
+#
+# kmod:
+#   Module already exists.
+#   Exec is skipped.
+#
 # @param afs_cellserverdb
 #   String defining CellServDB. Content of file $afs_config_path/CellServDB.
 #   This file will be ignored if the default value is not changed.
@@ -140,20 +147,41 @@ class afs (
     before => $package_before,
   }
 
+  $openafs_module_dir = "/lib/modules/${facts['kernelrelease']}/extra/openafs"
+  $openafs_module     = "${openafs_module_dir}/openafs.ko"
+  $openafs_module_xz  = "${openafs_module}.xz"
+
   if $facts['os']['family'] == 'RedHat' and versioncmp($facts['os']['release']['major'], '10') >= 0 {
-    exec { 'afs_rhel10_uncompress_module':
-      command => "/usr/bin/unxz -kf /lib/modules/${facts['kernelrelease']}/extra/openafs/openafs.ko.xz",
+    # For DKMS packages this builds the kernel module.
+    # For kmod packages the module already exists and this exec is skipped.
+    exec { 'afs_rhel10_build_module':
+      command   => '/usr/vice/etc/systemd-exec.openafs-client start',
+      path      => ['/usr/bin','/usr/sbin','/bin','/sbin','/usr/vice/etc'],
+      timeout   => 3600,
+      tries     => 3,
+      try_sleep => 60,
+      logoutput => true,
+      unless    => "/usr/bin/test -f ${openafs_module_xz} -o -f ${openafs_module}",
+      require   => Package[$package_name],
+    }
+
+    exec { 'afs_rhel10_uncompress':
+      command => "/usr/bin/unxz -kf ${openafs_module_xz}",
       path    => ['/usr/bin','/usr/sbin','/bin','/sbin'],
-      unless  => "/usr/bin/test -f /lib/modules/${facts['kernelrelease']}/extra/openafs/openafs.ko",
+      unless  => "/usr/bin/test -f ${openafs_module}",
+      onlyif  => "/usr/bin/test -f ${openafs_module_xz}",
+      require => Exec['afs_rhel10_build_module'],
     }
 
     exec { 'afs_rhel10_load_module':
-      command     => "/usr/sbin/insmod /lib/modules/${facts['kernelrelease']}/extra/openafs/openafs.ko",
-      path        => ['/usr/bin','/usr/sbin','/bin','/sbin'],
-      unless      => '/usr/sbin/lsmod | /usr/bin/grep -q "^openafs"',
-      require     => Exec['afs_rhel10_uncompress_module'],
-      logoutput   => true,
-      refreshonly => false,
+      command => "/usr/sbin/insmod ${openafs_module}",
+      path    => ['/usr/bin','/usr/sbin','/bin','/sbin'],
+      unless  => '/usr/sbin/lsmod | /usr/bin/grep -q "^openafs"',
+      onlyif  => "/usr/bin/test -f ${openafs_module}",
+      require => [
+        Exec['afs_rhel10_build_module'],
+        Exec['afs_rhel10_uncompress'],
+      ],
     }
   }
 
