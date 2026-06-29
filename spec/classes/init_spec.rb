@@ -16,11 +16,38 @@ describe 'afs' do
       'File[afs_config_client]',
     ]
 
+    if os_facts[:os]['family'] == 'RedHat' &&
+       os_facts[:os]['release']['major'] == '10'
+
+      service_require = [
+        'File[afs_config_cacheinfo]',
+        'File[afs_config_client]',
+        'Exec[afs_rhel10_load_module]',
+      ]
+    end
+
     context "on #{os}" do
       describe 'with default values for parameters' do
         let(:facts) { os_facts }
 
         it { is_expected.to compile.with_all_deps }
+
+        if os_facts[:os]['family'] == 'RedHat' &&
+           os_facts[:os]['release']['major'] == '10'
+
+          it {
+            is_expected.to contain_exec('afs_rhel10_uncompress_module').with(
+              'command' => %r{/usr/bin/unxz},
+            )
+          }
+
+          it {
+            is_expected.to contain_exec('afs_rhel10_load_module').with(
+              'command' => %r{/usr/sbin/insmod},
+            )
+          }
+
+        end
 
         os_data[:package_name].each do |package|
           it {
