@@ -1,5 +1,21 @@
 # Changelog
 
+## [v3.3.0](https://github.com/Ericsson/puppet-module-afs/tree/v3.3.0) (2026-09-25)
+
+[Full Changelog](https://github.com/Ericsson/puppet-module-afs/compare/v3.2.0...v3.3.0)
+
+**Merged pull requests:**
+
+- Manage CellServDB.local on EL; CI, PDK 3.4.0 and docs updates [\#138](https://github.com/Ericsson/puppet-module-afs/pull/138) ([dsundq](https://github.com/dsundq))
+
+## [v3.2.0](https://github.com/Ericsson/puppet-module-afs/tree/v3.2.0) (2026-07-03)
+
+[Full Changelog](https://github.com/Ericsson/puppet-module-afs/compare/v3.1.0...v3.2.0)
+
+**Implemented enhancements:**
+
+- Add support for RHEL10 [\#137](https://github.com/Ericsson/puppet-module-afs/pull/137) ([ashoksundeep](https://github.com/ashoksundeep))
+
 ## [v3.1.0](https://github.com/Ericsson/puppet-module-afs/tree/v3.1.0) (2025-02-07)
 
 [Full Changelog](https://github.com/Ericsson/puppet-module-afs/compare/v3.0.0...v3.1.0)
