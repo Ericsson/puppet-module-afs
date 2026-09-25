@@ -13,7 +13,13 @@
 #   Exec is skipped.
 #
 # @param afs_cellserverdb
-#   String defining CellServDB. Content of file $afs_config_path/CellServDB.
+#   String defining CellServDB.
+#   On Enterprise Linux (RedHat family) this content is written to
+#   $afs_config_path/CellServDB.local, which the openafs-client start script
+#   merges with CellServDB.dist into the active $afs_config_path/CellServDB.
+#   This avoids the active CellServDB being overwritten on every client restart;
+#   it is only regenerated when the cell content changes.
+#   On all other platforms the content is written to $afs_config_path/CellServDB.
 #   This file will be ignored if the default value is not changed.
 #
 # @param afs_cell
@@ -260,9 +266,20 @@ class afs (
   }
 
   if $afs_cellserverdb != undef {
+    # On Enterprise Linux (RedHat family) the openafs-client start script merges
+    # CellServDB.local + CellServDB.dist into the active CellServDB. Managing
+    # CellServDB.local (instead of the active CellServDB) means the active
+    # /usr/vice/etc/CellServDB is only regenerated when the cell content actually
+    # changes, and is not overwritten on every client restart.
+    # Other platforms keep managing the active CellServDB directly.
+    $afs_cellserverdb_file = $facts['os']['family'] ? {
+      'RedHat' => "${afs_config_path}/CellServDB.local",
+      default  => "${afs_config_path}/CellServDB",
+    }
+
     file { 'afs_config_cellserverdb' :
       ensure  => file,
-      path    => "${afs_config_path}/CellServDB",
+      path    => $afs_cellserverdb_file,
       owner   => 'root',
       group   => 'root',
       mode    => '0644',

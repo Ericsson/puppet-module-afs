@@ -157,10 +157,19 @@ describe 'afs' do
 
         context "where afs_cellserverdb is <>sunset.github.com\t#Sunset>" do
           # file { 'afs_config_cellserverdb' :}
+          # On RedHat/EL the active CellServDB must not be overwritten on restart,
+          # so the content is managed in CellServDB.local instead.
+          cellserverdb_path =
+            if os_facts[:os]['family'] == 'RedHat'
+              "#{os_data[:afs_config_path]}/CellServDB.local"
+            else
+              "#{os_data[:afs_config_path]}/CellServDB"
+            end
+
           it {
             is_expected.to contain_file('afs_config_cellserverdb').with(
               'ensure'  => 'file',
-              'path'    => "#{os_data[:afs_config_path]}/CellServDB",
+              'path'    => cellserverdb_path,
               'owner'   => 'root',
               'group'   => 'root',
               'mode'    => '0644',
