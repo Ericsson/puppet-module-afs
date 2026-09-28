@@ -1,13 +1,7 @@
 fixtures:
   repositories:
-    'common':
-      repo: 'https://github.com/ghoneycutt/puppet-module-common.git'
-      ref:  'v1.3.0'
     'cron_core':
       repo: 'https://github.com/puppetlabs/puppetlabs-cron_core'
-      ref:  '1.0.0'
+      ref:  'v2.0.3'
     'stdlib':
       repo: 'https://github.com/puppetlabs/puppetlabs-stdlib.git'
-      ref:  '5.2.0'
-  symlinks:
-    afs: "#{source_dir}"

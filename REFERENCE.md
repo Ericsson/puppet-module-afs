@@ -8,10 +8,6 @@
 
 * [`afs`](#afs): This module manages OpenAFS
 
-### Defined types
-
-* [`afs::validate_domain_names`](#afs--validate_domain_names): == Define: afs::validate_domain_names iteration in Puppet 3 style
-
 ## Classes
 
 ### <a name="afs"></a>`afs`
@@ -160,7 +156,7 @@ Default value: `undef`
 
 ##### <a name="-afs--afs_suidcells"></a>`afs_suidcells`
 
-Data type: `Variant[Array[String], String]`
+Data type: `Variant[Array[Stdlib::Fqdn], Stdlib::Fqdn]`
 
 Array of strings with content of the file $afs_config_path/SuidCells.
 This file will be ignored if the default value is not changed.
@@ -265,11 +261,4 @@ Data type: `Optional[String]`
 String of which service provider should be used
 
 Default value: `undef`
-
-## Defined types
-
-### <a name="afs--validate_domain_names"></a>`afs::validate_domain_names`
-
-== Define: afs::validate_domain_names
-iteration in Puppet 3 style
 

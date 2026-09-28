@@ -9,16 +9,12 @@
   "issues_url": "https://github.com/ericsson/puppet-module-afs/issues",
   "dependencies": [
     {
-      "name": "ghoneycutt/common",
-      "version_requirement": ">= 1.9.0 < 2.0.0"
-    },
-    {
       "name": "puppetlabs/cron_core",
-      "version_requirement": ">= 1.0.0 < 2.0.0"
+      "version_requirement": ">= 1.0.0 < 3.0.0"
     },
     {
       "name": "puppetlabs/stdlib",
-      "version_requirement": ">= 5.2.0 < 10.0.0"
+      "version_requirement": ">= 9.0.0 < 11.0.0"
     }
   ],
   "operatingsystem_support": [

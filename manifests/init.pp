@@ -119,7 +119,7 @@ class afs (
   Optional[Integer[1, 31]]  $afs_cron_job_monthday              = undef,
   Optional[Integer[1, 12]]  $afs_cron_job_month                 = undef,
   Optional[Integer[0, 7]]   $afs_cron_job_weekday               = undef,
-  Variant[Array[String], String] $afs_suidcells                 = [],
+  Variant[Array[Stdlib::Fqdn], Stdlib::Fqdn] $afs_suidcells      = [],
   Stdlib::Unixpath          $cache_path                         = undef,
   Integer                   $cache_size                         = 1000000,
   String                    $config_client_args                 = '-dynroot -afsdb -daemons 6 -volumes 1000',
@@ -133,11 +133,6 @@ class afs (
   Optional[String]          $service_provider                   = undef,
 ) {
   $afs_suidcells_array = any2array($afs_suidcells)
-  $config_client_dir = dirname($config_client_path)
-
-  # TODO: Replace with Stdlib::Fqdn
-  afs::validate_domain_names { $afs_suidcells_array: }
-
   $package_before = [
     File[afs_config_cacheinfo],
     File[afs_config_client],
@@ -191,8 +186,10 @@ class afs (
     }
   }
 
-  common::mkdir_p { $afs_config_path: }
-  common::mkdir_p { $config_client_dir: }
+  # $afs_config_path (e.g. /usr/vice/etc, /etc/openafs) is created by the
+  # openafs package installation, so config files there require Package.
+  # $config_client_dir (/etc/sysconfig on EL, /etc/default on Ubuntu) is an
+  # OS default directory that always exists.
 
   File {
     before => Service[afs_openafs_client_service],
@@ -228,7 +225,7 @@ class afs (
     group   => 'root',
     mode    => '0644',
     content => template('afs/cacheinfo.erb'),
-    require => Common::Mkdir_p[$afs_config_path],
+    require => Package[$package_name],
   }
 
   file { 'afs_config_client' :
@@ -238,7 +235,6 @@ class afs (
     group   => 'root',
     mode    => '0644',
     content => template('afs/openafs-client.erb'),
-    require => Common::Mkdir_p[$config_client_dir],
   }
 
   if empty($afs_suidcells_array) == false {
@@ -249,7 +245,7 @@ class afs (
       group   => 'root',
       mode    => '0644',
       content => template('afs/suidcells.erb'),
-      require => Common::Mkdir_p[$afs_config_path],
+      require => Package[$package_name],
     }
   }
 
@@ -261,7 +257,7 @@ class afs (
       group   => 'root',
       mode    => '0644',
       content => "${afs_cell}\n",
-      require => Common::Mkdir_p[$afs_config_path],
+      require => Package[$package_name],
     }
   }
 
@@ -284,7 +280,7 @@ class afs (
       group   => 'root',
       mode    => '0644',
       content => "${afs_cellserverdb}\n",
-      require => Common::Mkdir_p[$afs_config_path],
+      require => Package[$package_name],
     }
   }
 

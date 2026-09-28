@@ -29,7 +29,7 @@ by platform and packages being used to install OpenAFS.
 
 ### Setup requirements
 
-This module requires `stdlib`,`cron_core` and `common` (see metadata.json).
+This module requires `stdlib` and `cron_core` (see metadata.json).
 
 ### Beginning with afs
 
