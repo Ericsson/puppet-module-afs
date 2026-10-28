@@ -1,5 +1,13 @@
 # Changelog
 
+## [v4.0.0](https://github.com/Ericsson/puppet-module-afs/tree/v4.0.0) (2026-10-28)
+
+[Full Changelog](https://github.com/Ericsson/puppet-module-afs/compare/v3.3.0...v4.0.0)
+
+**Merged pull requests:**
+
+- Modernize module: drop common dependency, refreshed deps and OS support [\#139](https://github.com/Ericsson/puppet-module-afs/pull/139) ([dsundq](https://github.com/dsundq))
+
 ## [v3.3.0](https://github.com/Ericsson/puppet-module-afs/tree/v3.3.0) (2026-09-25)
 
 [Full Changelog](https://github.com/Ericsson/puppet-module-afs/compare/v3.2.0...v3.3.0)
