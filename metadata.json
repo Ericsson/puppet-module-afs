@@ -9,24 +9,18 @@
   "issues_url": "https://github.com/ericsson/puppet-module-afs/issues",
   "dependencies": [
     {
-      "name": "ghoneycutt/common",
-      "version_requirement": ">= 1.9.0 < 2.0.0"
-    },
-    {
       "name": "puppetlabs/cron_core",
-      "version_requirement": ">= 1.0.0 < 2.0.0"
+      "version_requirement": ">= 1.0.0 < 3.0.0"
     },
     {
       "name": "puppetlabs/stdlib",
-      "version_requirement": ">= 5.2.0 < 10.0.0"
+      "version_requirement": ">= 9.0.0 < 11.0.0"
     }
   ],
   "operatingsystem_support": [
     {
       "operatingsystem": "RedHat",
       "operatingsystemrelease": [
-        "5",
-        "6",
         "7",
         "8",
         "9",
@@ -34,48 +28,16 @@
       ]
     },
     {
-      "operatingsystem": "CentOS",
+      "operatingsystem": "Rocky",
       "operatingsystemrelease": [
-        "5",
-        "6",
-        "7",
         "8",
-        "9"
-      ]
-    },
-    {
-      "operatingsystem": "OracleLinux",
-      "operatingsystemrelease": [
-        "5",
-        "6",
-        "7",
-        "8",
-        "9"
-      ]
-    },
-    {
-      "operatingsystem": "Scientific",
-      "operatingsystemrelease": [
-        "5",
-        "6",
-        "7",
-        "8"
+        "9",
+        "10"
       ]
     },
     {
       "operatingsystem": "SLES",
       "operatingsystemrelease": [
-        "10",
-        "11",
-        "12",
-        "15"
-      ]
-    },
-    {
-      "operatingsystem": "SLED",
-      "operatingsystemrelease": [
-        "10",
-        "11",
         "12",
         "15"
       ]
@@ -83,10 +45,6 @@
     {
       "operatingsystem": "Ubuntu",
       "operatingsystemrelease": [
-        "12.04",
-        "14.04",
-        "16.04",
-        "18.04",
         "20.04",
         "22.04",
         "24.04"

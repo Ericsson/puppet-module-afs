@@ -11,6 +11,7 @@ describe 'afs' do
       'File[afs_config_cacheinfo]',
       'File[afs_config_client]',
     ]
+
     service_require = [
       'File[afs_config_cacheinfo]',
       'File[afs_config_client]',
@@ -58,15 +59,6 @@ describe 'afs' do
           }
         end
 
-        # common::mkdir_p { ...: }
-        it {
-          is_expected.to contain_common__mkdir_p(os_data[:afs_config_path])
-        }
-
-        it {
-          is_expected.to contain_common__mkdir_p(File.dirname(os_data[:config_client_path]))
-        }
-
         # file { 'afs_config_cacheinfo' :}
         it {
           is_expected.to contain_file('afs_config_cacheinfo').with(
@@ -76,10 +68,11 @@ describe 'afs' do
             'group'   => 'root',
             'mode'    => '0644',
             'content' => "/afs:#{os_data[:cache_path]}:1000000\n",
-            'require' => "Common::Mkdir_p[#{os_data[:afs_config_path]}]",
             'before'  => 'Service[afs_openafs_client_service]',
           )
         }
+        # afs_config_cacheinfo lives under $afs_config_path, created by the package
+        it { is_expected.to contain_file('afs_config_cacheinfo').that_requires("Package[#{os_data[:package_name].first}]") }
 
         # file { 'afs_config_client' :}
         it {
@@ -89,7 +82,6 @@ describe 'afs' do
             'owner'   => 'root',
             'group'   => 'root',
             'mode'    => '0644',
-            'require' => "Common::Mkdir_p[#{File.dirname(os_data[:config_client_path])}]",
             'before'  => 'Service[afs_openafs_client_service]',
           )
         }
@@ -147,11 +139,9 @@ describe 'afs' do
               'owner'   => 'root',
               'group'   => 'root',
               'mode'    => '0644',
-              'require' => "Common::Mkdir_p[#{os_data[:afs_config_path]}]",
               'before'  => 'Service[afs_openafs_client_service]',
             )
           }
-          it { is_expected.to contain_afs__validate_domain_names('sunset.github.com') }
           it { is_expected.to contain_file('afs_config_thiscell').with_content(%r{^sunset.github.com$}) }
         end
 
@@ -173,11 +163,9 @@ describe 'afs' do
               'owner'   => 'root',
               'group'   => 'root',
               'mode'    => '0644',
-              'require' => "Common::Mkdir_p[#{os_data[:afs_config_path]}]",
               'before'  => 'Service[afs_openafs_client_service]',
             )
           }
-          it { is_expected.to contain_afs__validate_domain_names('sunset.github.com') }
           it { is_expected.to contain_file('afs_config_cellserverdb').with_content(%r{^>sunset.github.com\\t#Sunset$}) }
         end
 
@@ -190,12 +178,10 @@ describe 'afs' do
               'owner'   => 'root',
               'group'   => 'root',
               'mode'    => '0644',
-              'require' => "Common::Mkdir_p[#{os_data[:afs_config_path]}]",
               'before'  => 'Service[afs_openafs_client_service]',
             )
           }
 
-          it { is_expected.to contain_afs__validate_domain_names('sunset.github.com') }
           it { is_expected.to contain_file('afs_config_suidcells').with_content(%r{^sunset.github.com\n$}) }
         end
 
@@ -214,36 +200,34 @@ describe 'afs' do
               'owner'   => 'root',
               'group'   => 'root',
               'mode'    => '0644',
-              'require' => "Common::Mkdir_p[#{os_data[:afs_config_path]}]",
               'before'  => 'Service[afs_openafs_client_service]',
             )
           }
-          it { is_expected.to contain_afs__validate_domain_names('sunset.github.com') }
-          it { is_expected.to contain_afs__validate_domain_names('sunset.gitlab.com') }
           it { is_expected.to contain_file('afs_config_suidcells').with_content(%r{^sunset.github.com\nsunset.gitlab.com\n$}) }
         end
 
-        context 'where afs_suidcells is <domain.c0m> as string' do
+        context 'where afs_suidcells is <domain.com> as string' do
           let(:params) do
             {
-              afs_suidcells: 'domain.c0m',
+              afs_suidcells: 'domain.com',
             }
           end
 
-          it 'fails' do
-            expect { is_expected.to contain_class(:subject) }.to raise_error(Puppet::Error, %r{is not a syntactically correct domain name})
-          end
+          # domain.com is a valid Stdlib::Fqdn, so it is accepted
+          it { is_expected.to compile }
+          it { is_expected.to contain_file('afs_config_suidcells').with_content(%r{^domain.com\n$}) }
         end
 
-        context 'where afs_suidcells is [-invalid domain.c0m] as array' do
+        context 'where afs_suidcells is [-invalid domain.com] as array' do
           let(:params) do
             {
-              afs_suidcells: ['-invalid', 'domain.c0m'],
+              afs_suidcells: ['-invalid', 'domain.com'],
             }
           end
 
+          # -invalid is not a valid Stdlib::Fqdn (label may not start with '-')
           it 'fails' do
-            expect { is_expected.to contain_class(:subject) }.to raise_error(Puppet::PreformattedError, %r{})
+            expect { is_expected.to contain_class(:subject) }.to raise_error(%r{afs_suidcells})
           end
         end
       end

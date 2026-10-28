@@ -29,7 +29,7 @@ by platform and packages being used to install OpenAFS.
 
 ### Setup requirements
 
-This module requires `stdlib`,`cron_core` and `common` (see metadata.json).
+This module requires `stdlib` and `cron_core` (see metadata.json).
 
 ### Beginning with afs
 
@@ -98,14 +98,13 @@ It is tested against the operating systems listed below. The supported OS
 matrix is defined in `metadata.json`, and CI runs `pdk validate` and
 `pdk test unit` on Puppet 8 via GitHub Actions (see `.github/workflows/`).
 
- * RedHat / CentOS / OracleLinux / Scientific (EL) 5, 6, 7, 8, 9
- * RedHat (EL) 10
- * SLES / SLED 10, 11, 12, 15
- * Ubuntu 12.04, 14.04, 16.04, 18.04, 20.04, 22.04, 24.04
+ * RedHat (EL) 7, 8, 9, 10
+ * Rocky 8, 9, 10
+ * SLES 12, 15
+ * Ubuntu 20.04, 22.04, 24.04
 
-Note: CentOS, OracleLinux and Scientific follow the EL releases listed in
-`metadata.json`; EL 10 is currently RedHat only. Other operating systems might
-be supported by configuring the module with the correct parameters.
+Other operating systems might be supported by configuring the module with
+the correct parameters.
 
 ## Development
 
